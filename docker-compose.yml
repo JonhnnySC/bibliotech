@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: bibliotech-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-bibliotech}
+    ports:
+      - "5432:5432"
+    volumes:
+      - bibliotech_pgdata:/var/lib/postgresql
+
+volumes:
+  bibliotech_pgdata:
+
+  
