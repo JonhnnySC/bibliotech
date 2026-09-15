@@ -23,16 +23,17 @@ public class Livro {
     private String descricao;
     private String edicao;
     private String tipo; // kindle? epub?
-    private boolean capaDura; //capa dura ou mole?
     private Integer paginas;
     private LocalDate dataLancamento;
+
+    // private boolean capaDura; //capa dura ou mole? // - migrar pra entidade exemplar
 
     //String autor -- um autor pode ter vários livros
     //String editora -- uma editora pode ter vários livros
 
     /*Usar ENUM para genero, curso, categoria. por que o valores é fixo e conhecido, ficçao, romance etc, mas há muitos de cada um e vai ser necessario colocar mais
     ou uma entidade é melhor? tenho que ver, a cadela tá com bafo de carniça
-    --tipo também como enum - fisico, ebook, audio book, e o tipo pŕecisa ser herança do ebook?????
+    --tipo também como enum - fisico, ebook, audio book, e o tipo pŕecisa ser herança do ebook????? -- implementar depois
     */
 
     /* Integer QUANTIDADE?? - Não se consegue saber quais exemplares estão emprestados, danificados, perdidos ou disponíveis
@@ -41,4 +42,11 @@ public class Livro {
 
     //private LocalDate dataFabricacao;  melhor pertencer a entidade exemplar - por que exe plares diferentes do mesmo livro podem ter sido impressos em datas diferentes,
     //private LocalDate dataCompra;  mesma loogica do acima
+
+    /* --------lembrar----------------
+
+    -- virar entidades exemplar, autor, editora
+        --no tipo deixar como físico apenas, e expandir depois, capa dura migrar pra exemplar.
+            -- por enquanto, os gneros e categorias serão enun por enquanto
+     */
 }
