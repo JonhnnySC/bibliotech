@@ -1,8 +1,7 @@
 package br.com.senac.bibliotech.controllers;
 
 import br.com.senac.bibliotech.entities.Usuario;
-import br.com.senac.bibliotech.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,10 +18,10 @@ public class UsuarioController {
     //injecao de dependencia por que o repositorio que vai ser pego pelo controlador
 
     //um constructor é melhor que autowired, pq sim
-    private final UsuarioRepository usuarioRepository;
+    private final JpaRepository<Usuario, Long> usuarioRepository;
 
-    public UsuarioController(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
+    public UsuarioController(JpaRepository<Usuario, Long> jpaRepository) {
+        this.usuarioRepository = jpaRepository;
     }
 
 
@@ -41,9 +40,9 @@ public class UsuarioController {
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> buscarPorId(@PathVariable Long id) {
         Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
-        if(usuarioBanco!=null) {
-            return ResponseEntity.ok(usuarioBanco); //
+        if (usuarioBanco != null) {
+            return ResponseEntity.ok(usuarioBanco);
         }
+        return ResponseEntity.notFound().build();
     }
-
 }
