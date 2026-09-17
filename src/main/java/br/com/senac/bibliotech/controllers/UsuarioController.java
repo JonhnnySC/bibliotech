@@ -2,7 +2,7 @@ package br.com.senac.bibliotech.controllers;
 
 import br.com.senac.bibliotech.entities.Usuario;
 import br.com.senac.bibliotech.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,11 +25,10 @@ public class UsuarioController {
         this.usuarioRepository = usuarioRepository;
     }
 
-
     /* - getmapin sem path responde a get /usuarios
-       - findAll traz todos os registros da tabela
-       -ResponseEntity retorna 200 OK -<>- QUANDO HÁ RETORNO VERDADEIRO DO FINDALL
-     */
+           - findAll traz todos os registros da tabela
+           -ResponseEntity retorna 200 OK -<>- QUANDO HÁ RETORNO VERDADEIRO DO FINDALL
+         */
     @GetMapping
     public ResponseEntity<List<Usuario>> listarTodos() {
         return ResponseEntity.ok(usuarioRepository.findAll());
@@ -41,9 +40,9 @@ public class UsuarioController {
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> buscarPorId(@PathVariable Long id) {
         Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
-        if(usuarioBanco!=null) {
-            return ResponseEntity.ok(usuarioBanco); //
+        if (usuarioBanco != null) {
+            return ResponseEntity.ok(usuarioBanco);
         }
+        return ResponseEntity.notFound().build();
     }
-
 }

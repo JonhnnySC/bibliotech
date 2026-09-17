@@ -17,6 +17,7 @@ public class Exemplar {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "data_impressao")
     private LocalDate dataImpressão;
     private LocalDate dataCompra;
     private String quantidadeDisponivel;
