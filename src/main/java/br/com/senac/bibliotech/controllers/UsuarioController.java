@@ -1,6 +1,7 @@
 package br.com.senac.bibliotech.controllers;
 
 import br.com.senac.bibliotech.entities.Usuario;
+import br.com.senac.bibliotech.repository.UsuarioRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,17 +19,16 @@ public class UsuarioController {
     //injecao de dependencia por que o repositorio que vai ser pego pelo controlador
 
     //um constructor é melhor que autowired, pq sim
-    private final JpaRepository<Usuario, Long> usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public UsuarioController(JpaRepository<Usuario, Long> jpaRepository) {
-        this.usuarioRepository = jpaRepository;
+    public UsuarioController(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
     }
 
-
     /* - getmapin sem path responde a get /usuarios
-       - findAll traz todos os registros da tabela
-       -ResponseEntity retorna 200 OK -<>- QUANDO HÁ RETORNO VERDADEIRO DO FINDALL
-     */
+           - findAll traz todos os registros da tabela
+           -ResponseEntity retorna 200 OK -<>- QUANDO HÁ RETORNO VERDADEIRO DO FINDALL
+         */
     @GetMapping
     public ResponseEntity<List<Usuario>> listarTodos() {
         return ResponseEntity.ok(usuarioRepository.findAll());

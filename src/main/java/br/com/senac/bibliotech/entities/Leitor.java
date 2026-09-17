@@ -5,7 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "Leitor")
+// @Table(name = "Leitor") = removido
 @Getter
 @Setter
 @SuperBuilder //aparentemente isso é bom pra quando tem herança
@@ -19,10 +19,9 @@ o builder gerado pra Leitor só enxerga os campos da própria classe
 @NoArgsConstructor
 @AllArgsConstructor
 public class Leitor extends Usuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+
     private String  nacionalidade;
     // e o historico de livros pegos, e tals, onde fica?
     //r- por que leitor é 1-n com emprestimos
+    // historico de emprestimos entra aaqui como @onetomany mapeado pelio leitor
 }

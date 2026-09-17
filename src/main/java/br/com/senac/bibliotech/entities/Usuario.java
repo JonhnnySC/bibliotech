@@ -1,14 +1,15 @@
 package br.com.senac.bibliotech.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Data
+@Table(name = "usuario")
+@Inheritance(strategy = InheritanceType.JOINED)//
+//@Data = Usuario com @Data gera equals e outras questões, melhor nao por motivos chatos de digitar aqui
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
