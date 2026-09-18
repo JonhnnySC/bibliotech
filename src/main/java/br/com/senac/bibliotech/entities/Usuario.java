@@ -1,5 +1,8 @@
 package br.com.senac.bibliotech.entities;
 
+import br.com.senac.bibliotech.enums.EnumGenero;
+import br.com.senac.bibliotech.enums.EnumPerfil;
+import br.com.senac.bibliotech.enums.EnumStatusUsuario;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -20,10 +23,21 @@ public class Usuario {
     private Long id;
 
     private String nome;
-
     private String email;
-
     private String senha;
-
     private String cpf;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private EnumPerfil perfil = EnumPerfil.LEITOR;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private EnumGenero genero;
 }

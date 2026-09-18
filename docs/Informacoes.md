@@ -8,3 +8,6 @@ Então na prática o ciclo é: criar branch → trabalhar → commit → PR/merg
 -------------------
 
 PRECISO FAZER UM .ENV PRA MAQUINA DA FACULDADE.
+
+------------------
+PADRÃO REST É COLOCAR OS NOMES DOS NEGOCIOS EM PULURAL
