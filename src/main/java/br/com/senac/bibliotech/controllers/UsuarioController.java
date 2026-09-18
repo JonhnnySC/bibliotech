@@ -55,10 +55,9 @@ public class UsuarioController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Usuario> criarUsuario(@RequestBody Usuario usuario) {
         var usuarioBanco = usuarioRepository.save(usuario);
-        return ResponseEntity.ok(usuarioBanco);
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioBanco);
     }
     @PatchMapping("/{id}/status")
     public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequest statusRequest) {
