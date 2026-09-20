@@ -1,6 +1,6 @@
 package br.com.senac.bibliotech.entities;
 
-import br.com.senac.bibliotech.enums.EnumGenero;
+import br.com.senac.bibliotech.enums.EnumGeneroLiterario;
 import br.com.senac.bibliotech.enums.EnumPerfil;
 import br.com.senac.bibliotech.enums.EnumStatusUsuario;
 import jakarta.persistence.*;
@@ -40,6 +40,6 @@ public class Leitor extends Usuario {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private EnumGenero genero;
+    private EnumGeneroLiterario genero;
 
 }

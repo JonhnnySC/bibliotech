@@ -1,9 +1,6 @@
 package br.com.senac.bibliotech.entities;
 
-import br.com.senac.bibliotech.enums.EnumGenero;
-import br.com.senac.bibliotech.enums.EnumPerfil;
 import br.com.senac.bibliotech.enums.EnumStatusExemplar;
-import br.com.senac.bibliotech.enums.EnumStatusUsuario;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,7 +18,7 @@ public class Exemplar {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "data_impressao")
+    //@Column(name = "data_impressao") //spriong ja converte dataImpressao para data_impressao
     private LocalDate dataImpressao;
     private LocalDate dataCompra;
     // private String quantidadeDisponivel; como cada exemplar é uma copia fisica então tem um status disponivel ou não.
