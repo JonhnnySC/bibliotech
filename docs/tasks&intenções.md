@@ -81,6 +81,12 @@ ENUMS:
 - enum status exemplar
 - enum satatus usuario
 - enum status emprestimo
+-------------------------
+
+19/09/26 - Realizações dos restos dos controladores após fazer um service bem feito.
+
+20/09/26 - Realizações de services , FIZ MUITAS ALTERAÇÕES NOS CONTROLLERS - FAZER UMA NVA BRANCH
+
 
     
 
