@@ -18,7 +18,7 @@ import java.time.LocalDate;
     ELA É RECOR PÓR QUER É IMUTASAVEL E NÃO PRECISA DE GET E SET
     as validações são executadas quanto o controler usa @valid
  */
-public record AutoRequest(
+public record AutorRequest(
         @NotBlank(message = "O nome é obrigatório")
         @Size(max = 255, message = "O nome deve ter no máximo 255 caracteres")
         String nome,
