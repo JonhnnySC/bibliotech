@@ -1,11 +1,14 @@
 package br.com.senac.bibliotech.entities;
 
+import br.com.senac.bibliotech.enums.EnumGeneroLiterario;
+import br.com.senac.bibliotech.enums.EnumPerfil;
+import br.com.senac.bibliotech.enums.EnumStatusUsuario;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "Leitor")
+// @Table(name = "Leitor") = removido
 @Getter
 @Setter
 @SuperBuilder //aparentemente isso é bom pra quando tem herança
@@ -19,10 +22,24 @@ o builder gerado pra Leitor só enxerga os campos da própria classe
 @NoArgsConstructor
 @AllArgsConstructor
 public class Leitor extends Usuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+
     private String  nacionalidade;
     // e o historico de livros pegos, e tals, onde fica?
     //r- por que leitor é 1-n com emprestimos
+    // historico de emprestimos entra aaqui como @onetomany mapeado pelio leitor
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private EnumPerfil perfil = EnumPerfil.LEITOR;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private EnumGeneroLiterario genero;
+
 }

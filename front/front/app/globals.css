@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0f1f16;
+  --foreground: #f5e6d3;
+  --gold: #d4a574;
+  --gold-bright: #e8c97a;
+  --earth-brown: #5c3a21;
+  --deep-green: #1a3d2e;
+  --cream: #f5e6d3;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-earth-brown: var(--earth-brown);
+  --color-deep-green: var(--deep-green);
+  --color-cream: var(--cream);
+  --font-sans: 'Cormorant Garamond', serif;
+  --font-display: 'Cinzel', serif;
+  --font-gothic: 'UnifrakturMaguntia', cursive;
+}
+
+body {
+  background: linear-gradient(135deg, #0f1f16 0%, #1a2e1f 50%, #2a1f14 100%);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Aura dourada pulsante */
+@keyframes golden-aura {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(212, 165, 116, 0.4),
+                0 0 20px rgba(212, 165, 116, 0.2),
+                0 0 30px rgba(212, 165, 116, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(232, 201, 122, 0.7),
+                0 0 40px rgba(232, 201, 122, 0.4),
+                0 0 60px rgba(232, 201, 122, 0.2);
+  }
+}
+
+@keyframes text-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(212, 165, 116, 0.5),
+                 0 0 20px rgba(212, 165, 116, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(232, 201, 122, 0.9),
+                 0 0 40px rgba(232, 201, 122, 0.6),
+                 0 0 60px rgba(232, 201, 122, 0.3);
+  }
+}
+
+@keyframes border-shimmer {
+  0%, 100% {
+    border-color: rgba(212, 165, 116, 0.4);
+    box-shadow: inset 0 0 10px rgba(212, 165, 116, 0.1);
+  }
+  50% {
+    border-color: rgba(232, 201, 122, 0.8);
+    box-shadow: inset 0 0 20px rgba(232, 201, 122, 0.2);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-golden-aura {
+  animation: golden-aura 3s ease-in-out infinite;
+}
+
+.animate-text-glow {
+  animation: text-glow 3s ease-in-out infinite;
+}
+
+.animate-border-shimmer {
+  animation: border-shimmer 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+/* Ornamentos dourados */
+.gold-ornament {
+  position: relative;
+}
+
+.gold-ornament::before,
+.gold-ornament::after {
+  content: '';
+  color: var(--gold-bright);
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0f1f16; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d4a574, #5c3a21);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: #e8c97a; }
