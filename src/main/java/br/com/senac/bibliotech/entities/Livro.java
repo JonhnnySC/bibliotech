@@ -7,7 +7,7 @@ import java.time.LocalDate;
 //n usar @data por que inclui to strin e equaisl and has code, numa entidade que é relacionada bidericenialmente
 //optei por colocar livro tendo yuma lista exemplar, e coimo so tem UMA referencia a livro, elas são bidirecionais = o toString() gerado pega os dois lados infinitamente, evitar @data
 @Entity
-@Table(name = "Livro")
+@Table(name = "livro")
 @Getter
 @Setter
 @NoArgsConstructor

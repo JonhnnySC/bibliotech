@@ -62,5 +62,31 @@ correção: mais correto architeturalmente: em vez de injetar JpaRepository<Auto
         this.autorRepository = autorRepository;
     }
 
+18/09/26 14:27 - Fazer enuns Colocar os relacionamentos das entidades;
 
+Questões para se ter em mente:
+    
+    Senha em texto puro. Ela precisa de hash BCrypt.
+    
+    Exemplar:
+
+    O dataImpressão com acento e o @Column são um remendo. 
+    Renomeie para dataImpressao e remova o @Column, porque o Spring Boot já converte camelCase para snake_case.
+    O quantidadeDisponivel (String) contradiz sua própria decisão. 
+    Cada exemplar deve ter um status (enum), exatamente como você escreveu no comentário do Livro.
+
+ENUMS: 
+- enum genero
+- enum perfil
+- enum status exemplar
+- enum satatus usuario
+- enum status emprestimo
+-------------------------
+
+19/09/26 - Realizações dos restos dos controladores após fazer um service bem feito.
+
+20/09/26 - Realizações de services , FIZ MUITAS ALTERAÇÕES NOS CONTROLLERS - FAZER UMA NVA BRANCH
+
+
+    
 

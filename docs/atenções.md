@@ -1,0 +1,3 @@
+2026-09-18T15:12:40.112-03:00  WARN 29599 --- [bibliotech] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+
+2026-09-18T15:12:40.112-03:00  WARN 29599 --- [bibliotech] [          main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
