@@ -21,3 +21,9 @@ CORS
 ^^ 
 
 pesquisar por que da 2 e 3.
+
+
+* Enquanto o JwtFilter não existir, TODAS as rotas estão abertas, inclusive
+* PATCH /perfil (qualquer um viraria ADMINISTRADOR). Use somente na sua máquina.
+* Quando o filtro entrar, cada rota ganha uma regra de quem pode chamar
+* (a tabela de permissões está na resposta do chat)

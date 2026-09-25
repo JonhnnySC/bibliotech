@@ -29,11 +29,6 @@ import java.util.List;
  * status certo. Nenhum if de negócio, nenhum orElse(null), nenhum try/catch: as falhas
  * viram exceção e o ApiExceptionHandler converte em 404/409/400.
  *
- * *** SEGURANÇA: LEIA ANTES DE USAR ***
- * Enquanto o JwtFilter não existir, TODAS estas rotas estão abertas, inclusive
- * PATCH /perfil (qualquer um viraria ADMINISTRADOR). Use somente na sua máquina.
- * Quando o filtro entrar, cada rota ganha uma regra de quem pode chamar
- * (a tabela de permissões está na resposta do chat).
  *
  * POR QUE PATCHes separados (senha, status, perfil) em vez de um PUT gigante?
  * Porque a PERMISSÃO é diferente para cada intenção. Um PUT que aceita tudo obriga
@@ -66,35 +61,35 @@ public class UsuarioController {
         return usuarioService.listar();
     }
 
-    // GET /usuarios/5 -> 200, ou 404 (o service lança a exceção)
+    // GET /usuarios/ -> 200, ou 404 (o service lança a exceção)
     @GetMapping("/{id}")
     public UsuarioResponse buscar(@PathVariable Long id) {
         return usuarioService.buscar(id);
     }
 
-    // PUT /usuarios/5 -> atualiza nome, email e cpf
+    // PUT /usuarios/ -> atualiza nome, email e cpf
     @PutMapping("/{id}")
     public UsuarioResponse atualizar(@PathVariable Long id,
                                      @Valid @RequestBody AtualizarUsuarioRequest request) {
         return usuarioService.atualizar(id, request);
     }
 
-    // PATCH /usuarios/5/status -> ATIVO, BLOQUEADO, INATIVO...
+    // PATCH /usuarios/5/status - ATIVO, BLOQUEADO, INATIVO
     @PatchMapping("/{id}/status")
     public UsuarioResponse atualizarStatus(@PathVariable Long id,
                                            @Valid @RequestBody AtualizarStatusRequest request) {
         return usuarioService.atualizarStatus(id, request.status());
     }
 
-    // PATCH /usuarios/5/perfil -> promover ou rebaixar (só ADMINISTRADOR, no futuro)
+    // PATCH /usuarios/5/perfil - promover ou rebaixar
     @PatchMapping("/{id}/perfil")
     public UsuarioResponse atualizarPerfil(@PathVariable Long id,
                                            @Valid @RequestBody AtualizarPerfilRequest request) {
         return usuarioService.atualizarPerfil(id, request.perfil());
     }
 
-    // PATCH /usuarios/5/senha -> 204 No Content: deu certo e não há nada a devolver.
-    // (Nunca devolva a senha, nem o hash.)
+    // PATCH /usuarios/5/senha -> 204 No Content: deu certo e não nada a devolver.
+    // Nunca devol a senha, nem o hash
     @PatchMapping("/{id}/senha")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void alterarSenha(@PathVariable Long id,
@@ -102,7 +97,7 @@ public class UsuarioController {
         usuarioService.alterarSenha(id, request);
     }
 
-    // DELETE /usuarios/5 -> 204. É um soft delete (status EXCLUIDO).
+    // DELETE /usuarios/5 -> 204. É um soft delete status EXCLUIDO.
     // Antes era DELETE /{id}/excluir: o verbo HTTP já diz "excluir".
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

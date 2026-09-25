@@ -14,7 +14,7 @@ public class Emprestimo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    // questão o emprestimo pŕecisa fazer arte com todoas as entidades
+    // questão o emprestimo pŕecisa fazer parte com todoas as entidades
     //
 
 }

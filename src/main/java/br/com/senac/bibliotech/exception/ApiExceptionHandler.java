@@ -10,18 +10,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Ponto ÚNICO onde exceções viram respostas HTTP.
- *
- * POR QUE centralizar? Sem isso, cada método de cada controller teria seu próprio
- * if/else de 404, e cada um responderia num formato diferente.
- *
- * ProblemDetail é o formato padrão RFC 9457 ("problem+json") que o Spring já suporta:
- * { "status": 404, "detail": "Autor com id 5 não foi encontrado", ... }
- *
- * ATENÇÃO: NÃO crie um @ExceptionHandler(Exception.class) genérico aqui.
- * Ele também capturaria as exceções internas do Spring MVC (rota inexistente, método
- * HTTP errado, JSON malformado) e transformaria 404/405/400 em 500.
+/*
+  Ponto ÚNICO onde exceções viram respostas HTTP.
+
+ POR QUE centralizar? Sem isso, cada método de cada controller teria seu próprio
+ if/else de 404, e cada um responderia num formato diferente.
+
+  ProblemDetail é o formato padrão RFC 9457 ("problem+json") que o Spring já suporta:
+ { "status": 404, "detail": "Autor com id 5 não foi encontrado", ... }
+
+  ATENÇÃO: NÃO crie um @ExceptionHandler(Exception.class) genérico aqui.
+  Ele também capturaria as exceções internas do Spring MVC (rota inexistente, método
+ HTTP errado, JSON malformado) e transformaria 404/405/400 em 500.
  */
 @RestControllerAdvice
 public class ApiExceptionHandler {

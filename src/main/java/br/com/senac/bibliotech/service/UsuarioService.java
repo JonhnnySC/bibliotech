@@ -17,12 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Regras de negócio de usuário. Tudo que o controller antigo fazia com "if" e
- * "orElse(null)" mora aqui, e o controller fica só com HTTP.
- *
- * ATENÇÃO ao import do @Transactional: é o do SPRING
- * (org.springframework.transaction.annotation), não o do jakarta.transaction.
+/*
+  Regras de negócio de usuário. Tudo que o controller antigo fazia com "if" e
+  "orElse(null)" mora aqui, e o controller fica só com HTTP.
+
  */
 @Service
 public class UsuarioService {
