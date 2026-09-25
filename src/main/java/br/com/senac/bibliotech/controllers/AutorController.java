@@ -28,4 +28,6 @@ public class AutorController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    //autor controller ainda usa o repository direto e devolve a entidade, preciso ligar o autror service com os dtos
 }

@@ -87,6 +87,8 @@ ENUMS:
 
 20/09/26 - Realizações de services , FIZ MUITAS ALTERAÇÕES NOS CONTROLLERS - FAZER UMA NVA BRANCH
 
+25/09/26 = Realizar configurações e outras questões em um sprintzinho
+
 
     
 

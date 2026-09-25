@@ -38,8 +38,4 @@ public class Leitor extends Usuario {
     @Builder.Default
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private EnumGeneroLiterario genero;
-
 }

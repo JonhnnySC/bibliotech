@@ -36,8 +36,4 @@ public class Usuario {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private EnumGeneroLiterario genero;
 }

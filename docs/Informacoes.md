@@ -37,3 +37,17 @@ TokenService - Formado e assinatura do teken
 
 O JwtFilter precisa só validar tokens. Se a validação morasse no AuthService, o filtro dependeria de todo o fluxo de login, e isso cria dependência circular. Se você trocar de JWT para outro mecanismo, só um arquivo muda.
 
+----------------------------
+FUNCIONAMENTO JWT FILTER
+
+    1. Requisição HTTP chega no Tomcat.
+    ↓
+    2. Tomcat chama: public doFilter() (Interface padrão do Java)
+    ↓
+    3. OncePerRequestFilter (Spring) intercepta:
+    "Já executei isso? Não? Ok, deixa passar."
+    ↓
+    4. OncePerRequestFilter chama internamente: protected doFilterInternal()
+    ↓
+    5. JwtFilter (SEU CÓDIGO) executa a lógica de validar o Token JWT.
+
