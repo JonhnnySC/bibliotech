@@ -9,7 +9,11 @@ package br.com.senac.bibliotech.exception;
  */
 public class RecursoNaoEncontradoException extends RuntimeException {
 
+    public RecursoNaoEncontradoException(String message) {
+        super(message);
+    }
+
     public RecursoNaoEncontradoException(String recurso, Long id) {
-        super(recurso + " com id " + id + " não foi encontrado");
+        super(recurso + " não encontrado(a) com id " + id);
     }
 }

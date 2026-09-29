@@ -1,4 +1,6 @@
 package br.com.senac.bibliotech.dto;
 
-public record LivroRequest() {
+public record LivroRequest(
+
+) {
 }

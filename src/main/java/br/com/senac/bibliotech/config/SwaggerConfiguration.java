@@ -24,8 +24,8 @@ public class SwaggerConfiguration {
                 ))
                 .info(new Info()
                         .title("Bibliotech")
-                        .version("1.0.1")
-                        .description("Api bibliotech")
+                        .version("1.0.4")
+                        .description("Bibliotech Api - for those who want knowledge without hesitation")
                 );
     }
 }

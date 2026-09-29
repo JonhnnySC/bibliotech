@@ -7,6 +7,7 @@ import br.com.senac.bibliotech.dto.AtualizarUsuarioRequest;
 import br.com.senac.bibliotech.dto.UsuarioRequest;
 import br.com.senac.bibliotech.dto.UsuarioResponse;
 import br.com.senac.bibliotech.service.UsuarioService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +39,8 @@ import java.util.List;
  * PATCH altera uma parte (uma "intenção").
  */
 @RestController
-@RequestMapping("/usuarios") // plural: a URL nomeia a coleção; o verbo HTTP é a ação
+@RequestMapping("/usuarios")// plural: a URL nomeia a coleção; o verbo HTTP é a ação
+@Tag(name = "Usuários", description = "API gerenciamento do usuário ")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;

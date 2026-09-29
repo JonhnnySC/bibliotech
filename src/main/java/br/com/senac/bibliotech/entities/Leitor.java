@@ -11,8 +11,10 @@ import lombok.experimental.SuperBuilder;
 // @Table(name = "Leitor") = removido
 @Getter
 @Setter
-@SuperBuilder //aparentemente isso é bom pra quando tem herança
-/* ---explicacao---
+@SuperBuilder//aparentemente isso é bom pra quando tem herança
+
+
+/* ---explicacao o pq---
 o @Builder normal do Lombok não lida bem com superclasses.
 Se "Leitor extends Usuario" e você usa @Builder comum em ambos,
 o builder gerado pra Leitor só enxerga os campos da própria classe

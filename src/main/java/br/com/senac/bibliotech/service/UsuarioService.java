@@ -45,7 +45,7 @@ public class UsuarioService {
             throw new ConflitoException("Já existe um usuário com este email");
         }
 
-        // builder() é um método ESTÁTICO gerado pelo Lombok (@SuperBuilder):
+        // builder() é um metodo ESTÁTICO gerado pelo Lombok (@SuperBuilder):
         // escreve-se Usuario.builder(), SEM "new".
         Usuario usuario = Usuario.builder()
                 .nome(request.nome())

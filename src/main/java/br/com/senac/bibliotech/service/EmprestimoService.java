@@ -22,13 +22,16 @@ import java.util.List;
 public class EmprestimoService {
 
     private final EmprestimoRepository emprestimoRepository;
-    private final LivroRepository livroRepository;
     private final LeitorRepository leitorRepository;
     private final ExemplarRepository exemplarRepository;
 
-    public EmprestimoService(ExemplarRepository exemplarRepository, EmprestimoRepository emprestimoRepository) {
-        this.exemplarRepository = exemplarRepository;
+
+    public EmprestimoService(EmprestimoRepository emprestimoRepository,
+                             LeitorRepository leitorRepository,
+                             ExemplarRepository exemplarRepository) {
         this.emprestimoRepository = emprestimoRepository;
+        this.leitorRepository = leitorRepository;
+        this.exemplarRepository = exemplarRepository;
     }
 
     /*
@@ -38,12 +41,12 @@ public class EmprestimoService {
          - se falhar, tudoo é desfeito
          */
     @Transactional
-    public Emprestimo realizarEmprestimo(Long leitorId, Long exemplarId) { //prteciso dos ides dos dois para que de certo
+    public Emprestimo realizarEmprestimo(Long leitorId, Long exemplarId) {
         Leitor leitor = leitorRepository.findById(leitorId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Livro não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor", leitorId));
 
-        Exemplar exemplar = ExemplarRepository.findById(exemplarId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar não encontrado"));
+        Exemplar exemplar = exemplarRepository.findById(exemplarId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar", exemplarId));
 
         //preciso v erificar se o livro ta disponivel, mas ocmo eu faço isso?
         //r - mais simples do que eu pensava
