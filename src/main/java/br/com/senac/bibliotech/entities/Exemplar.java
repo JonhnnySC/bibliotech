@@ -24,6 +24,14 @@ public class Exemplar {
     // private String quantidadeDisponivel; como cada exemplar é uma copia fisica então tem um status disponivel ou não.
     private Boolean capaDura;
 
+
+    //COM IUSSO O SISTEMA SABE QUAL LIVRO EESSO PERTENCE
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "livro_id", nullable = false)
+    private Livro livro;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

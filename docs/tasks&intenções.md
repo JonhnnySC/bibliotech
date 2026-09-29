@@ -89,6 +89,9 @@ ENUMS:
 
 25/09/26 = Realizar configurações e outras questões em um sprintzinho
 
+29/09/26 = IMplementar o resto do codigo para funcionamento pleno, principalmente Services de emprestimo e seu controlador
+
+    - problema, preciso colocar relacionamentos na entidade senão nao vai funcionar
 
     
 

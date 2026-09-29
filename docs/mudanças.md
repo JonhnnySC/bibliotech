@@ -29,3 +29,13 @@ UsuarioCOntroler recebe Usuario no Post er no Put
        DELETE /{id}/excluir por DELETE /usuarios/{id}, porque o verbo HTTP já diz "excluir".
 
 Mudanças no UsuarioCOntroller colocando valid e outro request body
+
+29;09;2026
+
+mUDANÇAS NAS ENTIDADES COM RELACIONAMENTOS,
+
+  EXEMPLAR
+  EMPRESTIMO
+  EMPRESTIMOREPOSITORY
+
+Para o controler receer o front, empresimo request

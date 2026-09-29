@@ -51,3 +51,14 @@ FUNCIONAMENTO JWT FILTER
     ↓
     5. JwtFilter (SEU CÓDIGO) executa a lógica de validar o Token JWT.
 
+------------------------------------ RECORDS ---------------------------
+
+Como o record não tem setters, o Jackson vai usar o construtor canônico. Isso significa que o JSON que o seu Frontend (Next.js/Axios) enviar precisa ter os nomes exatamente iguais aos parâmetros do record.
+No seu Frontend, a chamada do Axios deve ser exatamente assim:
+
+    Os nomes "leitorId" e "exemplarId" devem ser idênticos aos do record
+
+    await axios.post("http://localhost:8080/emprestimos", {
+    leitorId: 1,
+    exemplarId: 5
+    });
