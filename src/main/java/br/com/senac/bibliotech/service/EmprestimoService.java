@@ -12,6 +12,7 @@ import br.com.senac.bibliotech.repository.EmprestimoRepository;
 import br.com.senac.bibliotech.repository.ExemplarRepository;
 import br.com.senac.bibliotech.repository.LeitorRepository;
 import br.com.senac.bibliotech.repository.LivroRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,40 +20,25 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor // aparente que é bom pra gerar construtor com todos os campos final
 public class EmprestimoService {
 
     private final EmprestimoRepository emprestimoRepository;
     private final LeitorRepository leitorRepository;
     private final ExemplarRepository exemplarRepository;
 
-
-    public EmprestimoService(EmprestimoRepository emprestimoRepository,
-                             LeitorRepository leitorRepository,
-                             ExemplarRepository exemplarRepository) {
-        this.emprestimoRepository = emprestimoRepository;
-        this.leitorRepository = leitorRepository;
-        this.exemplarRepository = exemplarRepository;
-    }
-
-    /*
-        por que usar transactional, que fazx com que as opreões de banco sejam únicas?
-         - Fazer duas operacoes: salvar emprestimo e atualizar o status do livro
-         - se o emprestimoo fort salvo mas o livro nao for marcado como indisponivel, da merda, dois caras com mesmo livro
-         - se falhar, tudoo é desfeito
-         */
-    @Transactional
+    @Transactional // se fgalhar, roll back pra evitar merda
     public Emprestimo realizarEmprestimo(Long leitorId, Long exemplarId) {
+
+
         Leitor leitor = leitorRepository.findById(leitorId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor", leitorId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor" + leitorId + "nao encontrado"));
 
         Exemplar exemplar = exemplarRepository.findById(exemplarId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar", exemplarId));
-
-        //preciso v erificar se o livro ta disponivel, mas ocmo eu faço isso?
-        //r - mais simples do que eu pensava
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar" + exemplarId + "não encontrado"));
 
         if (exemplar.getStatus() != EnumStatusExemplar.DISPONIVEL) {
-            throw new ConflitoException("Este livro não está disponivel pra empresta");
+            throw new ConflitoException("Este exemplar não esta disponivel");
         }
 
         //buildar emprestimo, é tipo, lego
@@ -64,19 +50,19 @@ public class EmprestimoService {
                 .statusEmprestimo(EnumStatusEmprestimo.ATIVO) //da pŕa usar assim tmb muito bom
                 .build();
 
-
         //atualizxa o statuso do exemplar para emprestado
         exemplar.setStatus(EnumStatusExemplar.EMPRESTADO);
         exemplarRepository.save(exemplar);
 
         return emprestimoRepository.save(emprestimo);
+
     }
 
-    //analise de se o emprestimo exziste e depois se foi devolviodo
+    //analise de se o emprestimo exziste e depois se foi devolviodo, se devolvido ok
     @Transactional
     public void devolverEmprestimo(Long emprestimoId) {
         Emprestimo emprestimo = emprestimoRepository.findById(emprestimoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Este emprestimo não foi encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Emprestimo: " + emprestimoId + " não encontrado"));
 
         if (emprestimo.getStatusEmprestimo() == EnumStatusEmprestimo.DEVOLVIDO) {
             throw new ConflitoException("Este emprestimo já foi devolvido");
@@ -93,6 +79,6 @@ public class EmprestimoService {
     }
 
     public List<Emprestimo> listarEmprestimos() {
-        return emprestimoRepository.findByStatus(EnumStatusEmprestimo.ATIVO);
+        return emprestimoRepository.findByStatusEmprestimo(EnumStatusEmprestimo.ATIVO);
     }
 }

@@ -31,12 +31,17 @@ public class EmprestimoController {
             @ApiResponse(responseCode = "404", description = "Leitor ou Exemplar não encontrado"),
             @ApiResponse(responseCode = "409", description = "Exemplar não esta disponível para empréstimo")
     })
+
+
     public ResponseEntity<Emprestimo> criar(@RequestBody EmprestimoRequest emprestimoRequest) {
         Emprestimo novoEmprestimo = emprestimoService.realizarEmprestimo(
                 emprestimoRequest.leitorId(),
                 emprestimoRequest.exemplarId());
+
         return ResponseEntity.status(HttpStatus.CREATED).body(novoEmprestimo);
     }
+
+
 
     @GetMapping("/ativos")
     @Operation(summary = "Listagem dos empréstimos ativos",
@@ -44,6 +49,8 @@ public class EmprestimoController {
     public ResponseEntity<List<Emprestimo>> listarAtivos() {
         return ResponseEntity.ok(emprestimoService.listarEmprestimos());
     }
+
+
 
     @PatchMapping("/{id}/devolver")
     @Operation(summary = "Devolução do empréstimo",
@@ -53,8 +60,11 @@ public class EmprestimoController {
             @ApiResponse(responseCode = "404", description = "Emprestimo não achado"),
             @ApiResponse(responseCode = "409", description = "Empréstimo já devolvido")
     })
+
+
     public ResponseEntity<Void> devolver(@PathVariable Long id) {
         emprestimoService.devolverEmprestimo(id);
+
         return ResponseEntity.noContent().build();
     }
 }
