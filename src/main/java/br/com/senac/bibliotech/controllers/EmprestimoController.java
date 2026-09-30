@@ -35,6 +35,7 @@ public class EmprestimoController {
         Emprestimo novoEmprestimo = emprestimoService.realizarEmprestimo(
                 emprestimoRequest.leitorId(),
                 emprestimoRequest.exemplarId());
+
         return ResponseEntity.status(HttpStatus.CREATED).body(novoEmprestimo);
     }
 
@@ -55,6 +56,7 @@ public class EmprestimoController {
     })
     public ResponseEntity<Void> devolver(@PathVariable Long id) {
         emprestimoService.devolverEmprestimo(id);
+
         return ResponseEntity.noContent().build();
     }
 }
