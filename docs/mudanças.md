@@ -39,3 +39,18 @@ mUDANÇAS NAS ENTIDADES COM RELACIONAMENTOS,
   EMPRESTIMOREPOSITORY
 
 Para o controler receer o front, empresimo request
+
+Exemplar controller :  
+
+    Linha 35: ExemplarService.atualizarStatus(...) → exemplarService.atualizarStatus(...)
+    Removi ExemplarRepository que não era usado Controller não deve acessar Repository diretamente
+    Renomeei a classe de ExemplarCOntroller para ExemplarController
+
+exemplar service:?
+
+    Linhas 25 e 43: Usei o construtor de 2 parâmetros 
+    new RecursoNaoEncontradoException("Livro", request.livroId()) 
+    que existe na sua classe de exceção
+exemplar repositoru 
+
+      List<Exemplar> findByLivroId(Livro livroId);

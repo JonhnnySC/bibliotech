@@ -79,6 +79,6 @@ public class EmprestimoService {
     }
 
     public List<Emprestimo> listarEmprestimos() {
-        return emprestimoRepository.findByStatus(EnumStatusEmprestimo.ATIVO);
+        return emprestimoRepository.findByStatusEmprestimo(EnumStatusEmprestimo.ATIVO);
     }
 }

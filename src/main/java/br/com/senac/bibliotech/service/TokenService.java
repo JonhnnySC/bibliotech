@@ -66,7 +66,6 @@ public class TokenService {
                     .withIssuer(EMISSOR)
                     .build()
                     .verify(token));
-
         } catch (JWTVerificationException e) {
             return Optional.empty();
         }

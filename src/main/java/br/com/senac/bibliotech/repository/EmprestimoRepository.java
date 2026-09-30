@@ -9,5 +9,5 @@ import java.util.List;
 public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long> {
     //precio adicioonar para buscar os emprestimos que estao com algum status, como no enum, para saber se ta atiovo, desativo etrc
 
-    List<Emprestimo> findByStatus(EnumStatusEmprestimo statusEmprestimo);
+    List<Emprestimo> findByStatusEmprestimo(EnumStatusEmprestimo statusEmprestimo);
 }
