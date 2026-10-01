@@ -27,35 +27,31 @@ public class EmprestimoService {
     private final LeitorRepository leitorRepository;
     private final ExemplarRepository exemplarRepository;
 
-    @Transactional // se fgalhar, roll back pra evitar merda
+    @Transactional
     public Emprestimo realizarEmprestimo(Long leitorId, Long exemplarId) {
-
-
         Leitor leitor = leitorRepository.findById(leitorId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor" + leitorId + "nao encontrado"));
-
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor " + leitorId + " não encontrado"));
         Exemplar exemplar = exemplarRepository.findById(exemplarId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar" + exemplarId + "não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar " + exemplarId + " não encontrado"));
 
         if (exemplar.getStatus() != EnumStatusExemplar.DISPONIVEL) {
-            throw new ConflitoException("Este exemplar não esta disponivel");
+            throw new ConflitoException("Este exemplar não está disponível");
         }
 
-        //buildar emprestimo, é tipo, lego
         Emprestimo emprestimo = Emprestimo.builder()
                 .leitor(leitor)
                 .exemplar(exemplar)
                 .dataEmprestimo(LocalDate.now())
-                .dataDevolucao(LocalDate.now().plusDays(14))
-                .statusEmprestimo(EnumStatusEmprestimo.ATIVO) //da pŕa usar assim tmb muito bom
+                .dataPrevistaDevolucao(LocalDate.now().plusDays(14)) // ✅ nunca dataDevolucao aqui
+                .statusEmprestimo(EnumStatusEmprestimo.ATIVO)
                 .build();
 
-        //atualizxa o statuso do exemplar para emprestado
         exemplar.setStatus(EnumStatusExemplar.EMPRESTADO);
         exemplarRepository.save(exemplar);
+        Emprestimo salvo = emprestimoRepository.save(emprestimo);
 
-        return emprestimoRepository.save(emprestimo);
-
+        salvo.getExemplar().getLivro(); // ✅ inicializa o proxy lazy dentro da transação
+        return salvo;
     }
 
     //analise de se o emprestimo exziste e depois se foi devolviodo, se devolvido ok
@@ -77,7 +73,7 @@ public class EmprestimoService {
         exemplar.setStatus(EnumStatusExemplar.DISPONIVEL);
         exemplarRepository.save(exemplar);
     }
-
+    @Transactional(readOnly = true)
     public List<Emprestimo> listarEmprestimos() {
         return emprestimoRepository.findByStatusEmprestimo(EnumStatusEmprestimo.ATIVO);
     }

@@ -4,6 +4,7 @@ import br.com.senac.bibliotech.dto.AlterarSenhaRequest;
 import br.com.senac.bibliotech.dto.AtualizarUsuarioRequest;
 import br.com.senac.bibliotech.dto.UsuarioRequest;
 import br.com.senac.bibliotech.dto.UsuarioResponse;
+import br.com.senac.bibliotech.entities.Leitor;
 import br.com.senac.bibliotech.entities.Usuario;
 import br.com.senac.bibliotech.enums.EnumPerfil;
 import br.com.senac.bibliotech.enums.EnumStatusUsuario;
@@ -13,6 +14,7 @@ import br.com.senac.bibliotech.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import br.com.senac.bibliotech.entities.Leitor;
 
 import java.util.List;
 import java.util.Locale;
@@ -36,28 +38,25 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponse cadastrar(UsuarioRequest request) {
         String email = normalizar(request.email());
+        String cpf = request.cpf().replaceAll("\\D", "");   // só dígitos
 
-        // Erro amigável (409) na maioria dos casos. Mas duas requisições simultâneas
-        // podem passar por este if ao mesmo tempo: a garantia FINAL é o UNIQUE no
-        // banco (migration), e o ApiExceptionHandler trata o
-        // DataIntegrityViolationException que ele lançaria.
         if (usuarioRepository.existsByEmail(email)) {
             throw new ConflitoException("Já existe um usuário com este email");
         }
+        if (usuarioRepository.existsByCpf(cpf)) {
+            throw new ConflitoException("Já existe um usuário com este CPF");
+        }
 
-        // builder() é um metodo ESTÁTICO gerado pelo Lombok (@SuperBuilder):
-        // escreve-se Usuario.builder(), SEM "new".
-        Usuario usuario = Usuario.builder()
+        Leitor leitor = Leitor.builder()
                 .nome(request.nome())
                 .email(email)
                 .senha(passwordEncoder.encode(request.senha())) // grava o HASH, nunca a senha
-                .cpf(request.cpf())
-                // O perfil é decidido AQUI, no servidor, e nunca pelo cliente.
-                .perfil(EnumPerfil.BIBLIOTECARIO)
+                .cpf(cpf)
+                .perfil(EnumPerfil.LEITOR)
                 .status(EnumStatusUsuario.ATIVO)
                 .build();
 
-        return UsuarioResponse.from(usuarioRepository.save(usuario));
+        return UsuarioResponse.from(usuarioRepository.save(leitor));
     }
 
     // Usuários EXCLUIDOS (soft delete) não aparecem na listagem.
@@ -145,5 +144,7 @@ public class UsuarioService {
     // exemplo, converte "I" de um jeito diferente). Use a MESMA regra no login.
     private String normalizar(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+
+
     }
 }

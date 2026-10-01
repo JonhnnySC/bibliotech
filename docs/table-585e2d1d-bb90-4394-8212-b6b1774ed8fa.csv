@@ -1,0 +1,10 @@
+﻿Endpoint,LEITOR,BIBLIOTECÁRIO,ADMINISTRADOR
+GET" (livros, usuários, empréstimos, autores)",✅,✅,✅
+POST /livros", "/autores", "/exemplares", "/usuarios,❌ 403,✅,✅
+PUT /livros/**", "/autores/** (edição/capa),❌ 403,✅,✅
+DELETE /livros/**", "/autores/**", "/exemplares/**,❌ 403,✅,✅
+POST /emprestimos + PATCH /exemplares/*/status,❌ 403,✅,✅
+PATCH /emprestimos/*/devolver,✅,✅,✅
+PATCH /usuarios/*/perfil ou */status,❌ 403,❌ 403,✅
+DELETE /usuarios/**,❌ 403,❌ 403,✅
+/auth/login", "/auth/registro", Swagger",público,público,público

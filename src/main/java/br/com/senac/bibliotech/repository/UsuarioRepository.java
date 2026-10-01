@@ -32,4 +32,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Todos exceto o status informado (ex.: listar tudo menos os EXCLUIDO).
     // List, e não Optional<List>: coleção vazia já significa "nada encontrado".
     List<Usuario> findByStatusNot(EnumStatusUsuario status);
+
+    boolean existsByCpf(String cpf);
 }
