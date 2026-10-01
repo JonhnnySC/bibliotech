@@ -6,8 +6,10 @@ import br.com.senac.bibliotech.entities.Livro;
 import br.com.senac.bibliotech.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.repository.LivroRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -32,12 +34,30 @@ public class LivroService {
         return LivroResponse.from(livroRepository.save(livro));
     }
 
+    @Transactional
+    public LivroResponse atualizar(Long id, LivroRequest dto) {
+        Livro livro = livroRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Livro não encontrado"));
+
+        livro.setVolume(dto.volume());
+        livro.setIsbn(dto.isbn());
+        livro.setDescricao(dto.descricao());
+        livro.setEdicao(dto.edicao());
+        livro.setTipo(dto.tipo());
+        livro.setPaginas(dto.paginas());
+        livro.setDataLancamento(dto.dataLancamento());
+        livro.setCapaUrl(dto.capaUrl());   // <- a capa
+
+        return LivroResponse.from(livroRepository.save(livro));    }
+
+    @Transactional(readOnly = true)
     public List<LivroResponse> listarTodos() {
         return livroRepository.findAll().stream()
                 .map(LivroResponse::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public LivroResponse buscarPorId(Long id) {
         Livro livro = livroRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Livro", id));

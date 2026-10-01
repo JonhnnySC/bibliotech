@@ -12,8 +12,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${gotica.variable} ${texto.variable}`}>
-      <body>{children}</body>
+    <html 
+      lang="pt-BR" 
+      className={`${gotica.variable} ${texto.variable}`} 
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+    >
+      <body suppressHydrationWarning className="bg-noite text-ouro-neon">
+        {children}
+      </body>
     </html>
   );
 }

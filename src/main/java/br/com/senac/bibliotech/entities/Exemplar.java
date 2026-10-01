@@ -28,8 +28,8 @@ public class Exemplar {
     //COM IUSSO O SISTEMA SABE QUAL LIVRO EESSO PERTENCE
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "livro_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER) // era lazy, mas mudei para eager para evitar erro de lazy initialization, pois o livro é necessário para exibir informações do exemplar
+    @JoinColumn(name = "livro_id")
     private Livro livro;
 
     @Enumerated(EnumType.STRING)

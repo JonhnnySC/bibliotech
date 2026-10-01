@@ -1,19 +1,38 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import Livro from "../../components/Livro";
+import Capa from "../../components/Capa";
 import { api } from "../../lib/api";
 import type { Emprestimo, Livro as LivroT, Usuario } from "../../types/usuario";
 
-const dataBR = (iso: string) => iso.split("-").reverse().join("/");
+// Formata data para DD/MM/AAAA — protege contra null/undefined
+const dataBR = (iso: string | null | undefined) => {
+  if (!iso) return "—";
+  return iso.split("-").reverse().join("/");
+};
 
-// dias até a devolução (negativo = atrasado)
-function diasRestantes(iso: string) {
+// Extrai apenas o ano da data de lançamento
+const anoLancamento = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  return iso.split("-")[0];
+};
+
+// Dias até a devolução (negativo = atrasado) — protege contra null/undefined
+function diasRestantes(iso: string | null | undefined) {
+  if (!iso) return 0;
   const [a, m, d] = iso.split("-").map(Number);
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   return Math.round((new Date(a, m - 1, d).getTime() - hoje.getTime()) / 86400000);
 }
+
+// helpers puros (fora do componente) -> não setam estado
+const buscarTudo = () =>
+  Promise.all([
+    api<LivroT[]>("/livros"),
+    api<Usuario[]>("/usuarios"),
+    api<Emprestimo[]>("/emprestimos/ativos"),
+  ]);
 
 export default function Home() {
   const [livros, setLivros] = useState<LivroT[]>([]);
@@ -23,37 +42,51 @@ export default function Home() {
   const [carregando, setCarregando] = useState(true);
   const [email, setEmail] = useState("");
 
-  const carregar = useCallback(async () => {
+  // fetch inicial no padrão sem setState síncrono no effect (callbacks .then)
+  useEffect(() => {
+    setEmail(localStorage.getItem("email") ?? "");
+    let vivo = true;
+    buscarTudo()
+      .then(([l, u, e]) => {
+        if (!vivo) return;
+        setLivros(l); setUsuarios(u); setAtivos(e); setErro("");
+      })
+      .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar"); })
+      .finally(() => { if (vivo) setCarregando(false); });
+    return () => { vivo = false; };
+  }, []);
+
+  // usado pelos handlers (devolver) -> setState em handler é sempre ok
+  async function recarregar() {
     try {
-      const [l, u, e] = await Promise.all([
-        api<LivroT[]>("/livros"),
-        api<Usuario[]>("/usuarios"),
-        api<Emprestimo[]>("/emprestimos/ativos"),
-      ]);
+      const [l, u, e] = await buscarTudo();
       setLivros(l); setUsuarios(u); setAtivos(e); setErro("");
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao carregar");
     } finally {
       setCarregando(false);
     }
-  }, []);
-
-  useEffect(() => {
-    setEmail(localStorage.getItem("email") ?? "");
-    carregar();
-  }, [carregar]);
+  }
 
   async function devolver(id: number) {
+    if (!confirm("Confirmar a devolução deste exemplar?")) return;
     try {
       await api(`/emprestimos/${id}/devolver`, { method: "PATCH" });
-      carregar();
+      recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao devolver");
     }
   }
 
-  const tituloLivro = (id: number) => livros.find((l) => l.id === id)?.volume ?? `Livro #${id}`;
-  const atrasados = ativos.filter((e) => e.statusEmprestimo === "ATRASADO" || diasRestantes(e.dataPrevistaDevolucao) < 0).length;
+  // lê o livro aninhado que o backend manda (exemplar.livro.volume), com fallback
+  const tituloLivro = (e: Emprestimo) =>
+    e.exemplar.livro?.volume ??
+    livros.find((l) => l.id === e.exemplar.livroId)?.volume ??
+    `Livro #${e.exemplar.livro?.id ?? e.exemplar.livroId ?? "?"}`;
+
+  const atrasados = ativos.filter((e) =>
+    e.statusEmprestimo === "ATRASADO" || diasRestantes(e.dataPrevistaDevolucao) < 0
+  ).length;
   const leitores = usuarios.filter((u) => u.perfil === "LEITOR" && u.status === "ATIVO").length;
   const nome = email.split("@")[0];
 
@@ -75,8 +108,8 @@ export default function Home() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Link href="/usuarios/novo" className="btn-neon font-gotica rounded-full px-5 py-2 text-xl">Novo usuário</Link>
-          <Link href="/usuarios" className="rounded-full border border-verde-neon/60 px-5 py-2 text-lg text-verde-neon hover:bg-musgo">Ver usuários</Link>
+          <Link href="/usuarios" className="btn-neon font-gotica rounded-full px-5 py-2 text-xl">Gerenciar Usuários</Link>
+          <Link href="/emprestimos" className="rounded-full border border-verde-neon/60 px-5 py-2 text-lg text-verde-neon hover:bg-musgo">Novo Empréstimo</Link>
         </div>
       </section>
 
@@ -85,7 +118,12 @@ export default function Home() {
       {/* Números */}
       <section className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((c) => (
-          <div key={c.titulo} className="borda-neon rounded-lg bg-marrom/70 p-5 text-center">
+          <div
+            key={c.titulo}
+            className={`borda-neon rounded-lg bg-marrom/70 p-5 text-center transition-all ${
+              c.valor > 0 && c.titulo === "Atrasados" ? "animate-pulse border-red-400/50" : ""
+            }`}
+          >
             <div className="text-3xl">{c.icone}</div>
             <div className={`font-gotica text-5xl ${c.cor}`}>{carregando ? "…" : c.valor}</div>
             <div className="text-ouro-neon">{c.titulo}</div>
@@ -95,7 +133,10 @@ export default function Home() {
 
       {/* Empréstimos */}
       <section className="mb-10">
-        <h2 className="font-gotica mb-3 text-3xl neon-ouro">Empréstimos em aberto</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-gotica text-3xl neon-ouro">Empréstimos em aberto</h2>
+          <Link href="/emprestimos" className="text-sm text-verde-neon hover:underline">Ver todos →</Link>
+        </div>
         <div className="overflow-x-auto rounded-lg border border-ouro bg-marrom/60">
           <table className="w-full text-left">
             <thead className="bg-musgo text-ouro-neon">
@@ -108,11 +149,11 @@ export default function Home() {
               {!carregando && ativos.length === 0 && (
                 <tr><td colSpan={5} className="p-6 text-center text-lg">Nenhum empréstimo em aberto. Os livros estão todos nas estantes.</td></tr>
               )}
-              {ativos.map((e) => {
+              {ativos.slice(0, 5).map((e) => {
                 const dias = diasRestantes(e.dataPrevistaDevolucao);
                 return (
-                  <tr key={e.id} className="border-t border-marrom-claro">
-                    <td className="p-3">{tituloLivro(e.exemplar.livroId)} <span className="text-sm text-ouro">(ex. #{e.exemplar.id})</span></td>
+                  <tr key={e.id} className="border-t border-marrom-claro hover:bg-noite/30 transition-colors">
+                    <td className="p-3">{tituloLivro(e)} <span className="text-sm text-ouro">(ex. #{e.exemplar.id})</span></td>
                     <td className="p-3">{e.leitor.nome}</td>
                     <td className="p-3">{dataBR(e.dataPrevistaDevolucao)}</td>
                     <td className={`p-3 ${dias < 0 ? "text-red-400" : dias <= 3 ? "neon-ouro" : "neon-verde"}`}>
@@ -137,16 +178,15 @@ export default function Home() {
         {!carregando && livros.length === 0 && <p className="text-lg">Nenhum livro cadastrado ainda.</p>}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {livros.slice(0, 6).map((l) => (
-            <article key={l.id} className="borda-neon overflow-hidden rounded-lg bg-marrom/70">
-              <div className="flex aspect-[2/3] items-center justify-center bg-noite/70">
-                {l.capaUrl
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={l.capaUrl} alt={l.volume} className="h-full w-full object-cover" />
-                  : <Livro className="h-14 w-14 opacity-70" />}
-              </div>
+            <article
+              key={l.id}
+              className="borda-neon overflow-hidden rounded-lg bg-marrom/70 transition-transform hover:scale-105"
+            >
+              <Capa isbn={l.isbn} url={l.capaUrl} titulo={l.volume} className="aspect-[2/3]" />
               <div className="p-2">
                 <h3 className="line-clamp-2 text-base leading-tight">{l.volume}</h3>
                 <p className="text-sm text-ouro">{l.paginas} págs.</p>
+                {l.dataLancamento && <p className="text-xs text-ouro/60">{anoLancamento(l.dataLancamento)}</p>}
               </div>
             </article>
           ))}

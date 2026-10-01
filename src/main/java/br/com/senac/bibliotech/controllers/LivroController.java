@@ -39,6 +39,17 @@ public class LivroController {
         return ResponseEntity.created(uri).body(response);
     }
 
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualizar um livro existente", description = "Atualiza os dados do livro, incluindo a capa")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Livro atualizado"),
+            @ApiResponse(responseCode = "404", description = "Livro não encontrado")
+    })
+    public ResponseEntity<LivroResponse> atualizar(@PathVariable Long id,
+                                                   @Valid @RequestBody LivroRequest livroRequest) {
+        return ResponseEntity.ok(livroService.atualizar(id, livroRequest));
+    }
+
     @GetMapping
     @Operation(summary = "Listar todos os livros", description = "Retorna todos os livros")
     @ApiResponses(value = {

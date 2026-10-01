@@ -1,7 +1,13 @@
-export const dataBR = (iso?: string | null) => (iso ? iso.split("-").reverse().join("/") : "—");
+// Formata data para DD/MM/AAAA
+export function dataBR(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return iso.split("-").reverse().join("/");
+}
 
-// dias até a devolução (negativo = atrasado)
-export function diasRestantes(iso: string) {
+// Dias até a devolução (negativo = atrasado)
+export function diasRestantes(iso: string | null | undefined): number {
+  if (!iso) return 0;
+  
   const [a, m, d] = iso.split("-").map(Number);
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
