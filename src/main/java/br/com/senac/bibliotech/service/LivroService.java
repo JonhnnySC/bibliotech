@@ -50,7 +50,7 @@ public class LivroService {
 
         return LivroResponse.from(livroRepository.save(livro));    }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true) // Adicione esta linha!
     public List<LivroResponse> listarTodos() {
         return livroRepository.findAll().stream()
                 .map(LivroResponse::from)

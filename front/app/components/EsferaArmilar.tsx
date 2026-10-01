@@ -1,20 +1,21 @@
+"use client";
+// Só importamos o que o componente realmente usa.
+// Sem useState/useEffect/api: este componente é puramente visual,
+// então não deve buscar dados nem depender de rota ([id]).
 import Livro from "./Livro";
 
-// Esfera armilar em CSS 3D com um livro girando no centro
+// `export default` aqui: é isso que a home (app/page.tsx) importa.
 export default function EsferaArmilar() {
   const texto = "✦ LIBER ✦ SCIENTIA ✦ LUX ✦ ARCANUM ✦ MEMORIA ✦ VERITAS ";
   return (
     <div className="relative mx-auto h-80 w-80 sm:h-[26rem] sm:w-[26rem]">
       <div className="aura" />
-
-      {/* anel de runas girando atrás da esfera */}
       <svg viewBox="0 0 200 200" className="runas absolute inset-0 h-full w-full opacity-70">
         <defs><path id="circ" d="M100,100 m-92,0 a92,92 0 1,1 184,0 a92,92 0 1,1 -184,0" /></defs>
-        <text fontSize="9" fill="#c99a2e" letterSpacing="3" style={{ filter: "drop-shadow(0 0 3px #ffd24a)" }}>
+        <text fontSize="9" fill="#c99a2e" letterSpacing="3" style={{ filter: "drop-shadow(0 0 3px #ffd24a)" }} suppressHydrationWarning>
           <textPath href="#circ">{texto}</textPath>
         </text>
       </svg>
-
       <div className="cena absolute inset-[12%]">
         <div className="esfera relative h-full w-full">
           <div className="anel" />

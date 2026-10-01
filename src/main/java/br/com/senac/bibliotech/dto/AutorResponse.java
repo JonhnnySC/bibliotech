@@ -17,10 +17,14 @@ o ruim é que o codiggo é repetitivo, quando houver muitos DTOs, a biblioteca M
  */
 public record AutorResponse(
 
+
+
         Long id,
         String nome,
         String nacionalidade,
         LocalDate dataNascimento
+
+
 ) {
 
     public static AutorResponse from(Autor autor) {
@@ -31,5 +35,7 @@ public record AutorResponse(
                 autor.getDataNascimento()
 
         );
+
+
     }
 }
