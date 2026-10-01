@@ -62,3 +62,45 @@ No seu Frontend, a chamada do Axios deve ser exatamente assim:
     leitorId: 1,
     exemplarId: 5
     });
+
+------------------------------------PATCHS NO USUARIO -------------------
+
+1. Semântica HTTP: PUT substitui, PATCH altera uma parte
+
+   PUT /usuarios/{id} → substitui o recurso inteiro (os dados cadastrais: nome, email, cpf)
+   PATCH /usuarios/{id}/... → altera uma parte específica, uma "intenção"
+
+Cada PATCH seu é uma intenção diferente de negócio, não um "update genérico".
+
+
+2. Cada PATCH tem regras e permissões DIFERENTES
+
+Se fosse um endpoint só, você teria que checar campo por campo quem pode mexer em quê
+
+PATCH /usuarios/{id}/status        → intenção: ativar/bloquear
+JWT válido?        ──não──> 401
+É ADMIN?           ──não──> 403
+status ∈ {ATIVO, BLOQUEADO, INATIVO}? ──não──> 400
+usuário existe?    ──não──> 404
+atualiza status    ─────────> 200 + UsuarioResponse
+
+PATCH /usuarios/{id}/perfil        → intenção: promover/rebaixar
+JWT válido?        ──não──> 401
+É ADMIN?           ──não──> 403
+perfil ∈ EnumPerfil? ──não──> 400
+usuário existe?    ──não──> 404
+atualiza perfil    ─────────> 200 + UsuarioResponse
+
+PATCH /usuarios/{id}/senha         → intenção: trocar a própria senha
+JWT válido?        ──não──> 401
+É o PRÓPRIO id?    ──não──> 403
+senhaAtual confere? ──não──> 400
+usuário existe?    ──não──> 404
+novo hash BCrypt   ─────────> 204 (NUNCA devolve senha/hash)
+
+PUT /usuarios/{id}                 → intenção: substituir cadastro
+JWT válido?        ──não──> 401
+É o PRÓPRIO id?    ──não──> 403
+email/cpf únicos?  ──não──> 409
+usuário existe?    ──não──> 404
+substitui dados    ─────────> 200 + UsuarioResponse

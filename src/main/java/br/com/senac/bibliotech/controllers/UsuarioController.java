@@ -7,6 +7,13 @@ import br.com.senac.bibliotech.dto.AtualizarUsuarioRequest;
 import br.com.senac.bibliotech.dto.UsuarioRequest;
 import br.com.senac.bibliotech.dto.UsuarioResponse;
 import br.com.senac.bibliotech.service.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,22 +32,23 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.List;
 
-/**
- * Controller FINO: recebe, valida o formato (@Valid), delega ao service e devolve o
- * status certo. Nenhum if de negócio, nenhum orElse(null), nenhum try/catch: as falhas
- * viram exceção e o ApiExceptionHandler converte em 404/409/400.
- *
- *
- * POR QUE PATCHes separados (senha, status, perfil) em vez de um PUT gigante?
- * Porque a PERMISSÃO é diferente para cada intenção. Um PUT que aceita tudo obriga
- * a checar campo por campo quem pode mexer em quê, e é fácil errar.
- *
- * PUT x PATCH: PUT substitui o recurso inteiro (aqui: os dados cadastrais);
- * PATCH altera uma parte (uma "intenção").
+/*
+ *Controller FINO: recebe, valida o formato (@Valid), delega ao service e devolve o
+  status certo. Nenhum if de negócio, nenhum orElse(null), nenhum try/catch: as falhas
+  viram exceção e o ApiExceptionHandler converte em 404/409/400.
+
+  POR QUE PATCHes separados senha, status, perfil em vez de um PUT gigante?
+
+  Porque a PERMISSÃO é diferente para cada intenção.
+  *
+  * Um PUT que aceita tudo obriga
+ a checar campo por campo quem pode mexer em quê, e é fácil errar.
+ PUT x PATCH: PUT substitui o recurso inteiro (aqui: os dados cadastrais);
+ PATCH altera uma parte (uma "intenção").
  */
 @RestController
-@RequestMapping("/usuarios")// plural: a URL nomeia a coleção; o verbo HTTP é a ação
-@Tag(name = "Usuários", description = "API gerenciamento do usuário ")
+@RequestMapping("/usuarios") // plural: a URL nomeia a coleção; o verbo HTTP é a ação
+@Tag(name = "Usuários", description = "Gerenciamento completo de usuários: cadastro, autenticação, permissões e ciclo de vida")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -49,61 +57,175 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
-    // POST /usuarios -> 201 Created + header Location apontando para o recurso novo
     @PostMapping
-    public ResponseEntity<UsuarioResponse> cadastrar(@Valid @RequestBody UsuarioRequest request) {
+    @Operation(
+            summary = "Cadastrar novo usuário",
+            description = "Cria um novo usuário no sistema. O email e CPF devem ser únicos. O usuário é criado com status ATIVO e perfil LEITOR por padrão."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso",
+                    content = @Content(schema = @Schema(implementation = UsuarioResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos: email mal formatado, senha fraca, campos obrigatórios faltando"
+            ),
+            @ApiResponse(responseCode = "409", description = "Conflito: email ou CPF já cadastrado no sistema"
+            )
+    })
+    public ResponseEntity<UsuarioResponse> cadastrar(
+            @Valid @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Dados do novo usuário",
+                    required = true
+            )
+            UsuarioRequest request
+    ) {
         UsuarioResponse criado = usuarioService.cadastrar(request);
         return ResponseEntity.created(URI.create("/usuarios/" + criado.id())).body(criado);
     }
 
-    // GET /usuarios -> 200 com a lista (sem os EXCLUIDOS). Devolver o DTO direto já
-    // dá 200; só usamos ResponseEntity quando precisamos controlar status ou header.
     @GetMapping
+    @Operation(
+            summary = "Listar todos os usuários ativos",
+            description = "Retorna lista de todos os usuários que não estão com status EXCLUIDO. Requer autenticação."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de usuários retornada com sucesso",
+                    content = @Content(schema = @Schema(implementation = UsuarioResponse[].class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Não autenticado - token JWT ausente ou inválido")
+    })
+    @SecurityRequirement(name = "bearerAuth")
     public List<UsuarioResponse> listar() {
         return usuarioService.listar();
     }
 
-    // GET /usuarios/ -> 200, ou 404 (o service lança a exceção)
     @GetMapping("/{id}")
-    public UsuarioResponse buscar(@PathVariable Long id) {
+    @Operation(
+            summary = "Buscar usuário por ID",
+            description = "Retorna os dados completos de um usuário específico pelo seu ID único."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário encontrado e retornado",
+                    content = @Content(schema = @Schema(implementation = UsuarioResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado ou excluído")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    public UsuarioResponse buscar(
+            @Parameter(description = "ID único do usuário", required = true, example = "1")
+            @PathVariable Long id
+    ) {
         return usuarioService.buscar(id);
     }
 
-    // PUT /usuarios/ -> atualiza nome, email e cpf
     @PutMapping("/{id}")
-    public UsuarioResponse atualizar(@PathVariable Long id,
-                                     @Valid @RequestBody AtualizarUsuarioRequest request) {
+    @Operation(
+            summary = "Atualizar dados cadastrais do usuário",
+            description = "Atualiza nome, email e CPF do usuário. Substitui os dados cadastrais completos (PUT = substituição total). O usuário só pode atualizar seus próprios dados."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Dados atualizados com sucesso",
+                    content = @Content(schema = @Schema(implementation = UsuarioResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos no corpo da requisição"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Proibido - tentando atualizar usuário que não é o seu"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Email ou CPF já está em uso por outro usuário")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    public UsuarioResponse atualizar(
+            @Parameter(description = "ID do usuário a ser atualizado", required = true, example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody AtualizarUsuarioRequest request
+    ) {
         return usuarioService.atualizar(id, request);
     }
 
-    // PATCH /usuarios/5/status - ATIVO, BLOQUEADO, INATIVO
     @PatchMapping("/{id}/status")
-    public UsuarioResponse atualizarStatus(@PathVariable Long id,
-                                           @Valid @RequestBody AtualizarStatusRequest request) {
+    @Operation(
+            summary = "Atualizar status do usuário (apenas ADMIN)",
+            description = "Altera o status do usuário para ATIVO, BLOQUEADO ou INATIVO. Usuário bloqueado não consegue fazer login. Requer perfil de ADMINISTRADOR."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Status atualizado com sucesso",
+                    content = @Content(schema = @Schema(implementation = UsuarioResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Status inválido (deve ser ATIVO, BLOQUEADO ou INATIVO)"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Proibido - requer perfil ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    public UsuarioResponse atualizarStatus(
+            @Parameter(description = "ID do usuário", required = true, example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody AtualizarStatusRequest request
+    ) {
         return usuarioService.atualizarStatus(id, request.status());
     }
 
-    // PATCH /usuarios/5/perfil - promover ou rebaixar
     @PatchMapping("/{id}/perfil")
-    public UsuarioResponse atualizarPerfil(@PathVariable Long id,
-                                           @Valid @RequestBody AtualizarPerfilRequest request) {
+    @Operation(summary = "Atualizar perfil/permissões do usuário (apenas ADMIN)", description = "Promove ou rebaixa o usuário alterando seu perfil (LEITOR, BIBLIOTECARIO, ADMINISTRADOR). Esta é a operação mais sensível do sistema pois controla permissões. Requer perfil de ADMINISTRADOR."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Perfil atualizado com sucesso",
+                    content = @Content(schema = @Schema(implementation = UsuarioResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Perfil inválido"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Proibido - requer perfil ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    public UsuarioResponse atualizarPerfil(
+            @Parameter(description = "ID do usuário", required = true, example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody AtualizarPerfilRequest request
+    ) {
         return usuarioService.atualizarPerfil(id, request.perfil());
     }
 
-    // PATCH /usuarios/5/senha -> 204 No Content: deu certo e não nada a devolver.
-    // Nunca devol a senha, nem o hash
     @PatchMapping("/{id}/senha")
+    @Operation(
+            summary = "Alterar senha do usuário",
+            description = "Altera a senha do usuário. Requer informar a senha atual corretamente e a nova senha. O usuário só pode alterar sua própria senha. A resposta é 204 No Content por segurança (nunca devolve senha ou hash)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Senha alterada com sucesso (sem conteúdo na resposta)"),
+            @ApiResponse(responseCode = "400", description = "Senha atual incorreta ou nova senha não atende requisitos de segurança"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Proibido - tentando alterar senha de outro usuário"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
+    @SecurityRequirement(name = "bearerAuth")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void alterarSenha(@PathVariable Long id,
-                             @Valid @RequestBody AlterarSenhaRequest request) {
+    public void alterarSenha(
+            @Parameter(description = "ID do usuário", required = true, example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody AlterarSenhaRequest request
+    ) {
         usuarioService.alterarSenha(id, request);
     }
 
-    // DELETE /usuarios/5 -> 204. É um soft delete status EXCLUIDO.
-    // Antes era DELETE /{id}/excluir: o verbo HTTP já diz "excluir".
     @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Excluir usuário (soft delete)",
+            description = "Marca o usuário como EXCLUIDO (soft delete). O usuário não é removido do banco, apenas fica invisível nas listagens e não pode mais fazer login. Requer autenticação."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Usuário excluído com sucesso (sem conteúdo)"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Proibido - sem permissão para excluir"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado ou já excluído")
+    })
+    @SecurityRequirement(name = "bearerAuth")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void excluir(@PathVariable Long id) {
+    public void excluir(
+            @Parameter(description = "ID do usuário a ser excluído", required = true, example = "1")
+            @PathVariable Long id
+    ) {
         usuarioService.excluir(id);
     }
 }

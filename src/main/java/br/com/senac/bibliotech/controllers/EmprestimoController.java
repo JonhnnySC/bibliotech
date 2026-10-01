@@ -17,7 +17,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/emprestimos")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @Tag(name = "Empréstimos", description = "Gerenciamento dos Empréstismos")
 public class EmprestimoController {
 
