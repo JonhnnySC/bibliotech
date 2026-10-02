@@ -4,7 +4,7 @@ export interface Autor {
   nacionalidade?: string;
   dataNascimento?: string;
   fotoUrl?: string;
-  livros: { id: number; volume: string; isbn?: string }[];
+  livros?: { id: number; volume: string; isbn?: string }[];
 }
 
 export interface AutorForm {

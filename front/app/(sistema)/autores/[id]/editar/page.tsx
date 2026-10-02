@@ -45,7 +45,7 @@ export default function EditarAutorPage() {
     nacionalidade: autor.nacionalidade ?? '',
     dataNascimento: autor.dataNascimento ?? '',
     fotoUrl: autor.fotoUrl ?? '',
-    livroIds: autor.livros.map((l) => l.id),
+livroIds: (autor.livros ?? []).map((l) => l.id),
   };
 
   return (

@@ -29,6 +29,7 @@ public class Livro {
     @Column(name = "capa_url", length = 500)
     private String capaUrl;
 
+
     // private boolean capaDura; //capa dura ou mole? // - migrar pra entidade exemplar
 
     //String autor -- um autor pode ter vários livros

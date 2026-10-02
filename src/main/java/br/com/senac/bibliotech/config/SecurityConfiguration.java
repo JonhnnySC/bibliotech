@@ -13,7 +13,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
@@ -24,14 +23,13 @@ public class SecurityConfiguration {
         this.tokenService = tokenService;
     }
 
-    //Cadeia de filtros de segurança  eprimeiro match vence).
+    // Cadeia de filtros de segurança (primeiro match vence).
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Libera
                 .cors(Customizer.withDefaults())
 
-                // stateless n precisa de token
+                // API stateless com JWT, não precisa de CSRF
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
@@ -39,54 +37,57 @@ public class SecurityConfiguration {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        //publico
+                        // Público
                         .requestMatchers(
                                 "/swagger-ui/**", "/v3/api-docs/**",
                                 "/swagger-resources/**", "/webjars/**",
                                 "/auth/login", "/auth/registro", "/error"
                         ).permitAll()
 
-                        // Ppesquisar o pq sisso
+                        // Preflight do CORS (o navegador manda OPTIONS antes da request real)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Apenas adm
+                        // Apenas ADMIN
                         .requestMatchers(HttpMethod.PATCH,
                                 "/usuarios/*/perfil",
                                 "/usuarios/*/status").hasRole("ADMINISTRADOR")
                         .requestMatchers(HttpMethod.DELETE,
                                 "/usuarios/**").hasRole("ADMINISTRADOR")
 
-                        // adm ou bibliotecrario
+                        // ADMIN ou BIBLIOTECARIO
                         .requestMatchers(HttpMethod.POST,
-                                "/livros", "/autores", "/exemplares", "/usuarios", "/emprestimos"
+                                "/livros", "/autores", "/exemplares", "/usuarios"
                         ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
-                        // Editar cooisas
                         .requestMatchers(HttpMethod.PUT,
-                                "/livros/**", "/autores/**").hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
+                                "/livros/**", "/autores/**"
+                        ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
+
                         .requestMatchers(HttpMethod.DELETE,
                                 "/livros/**", "/autores/**", "/exemplares/**"
                         ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
-                        // Mudar status de exemplar
                         .requestMatchers(HttpMethod.PATCH,
-                                "/exemplares/*/status").hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
+                                "/exemplares/*/status"
+                        ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
-                        //qualquwer um
-                        .requestMatchers(HttpMethod.PATCH,
-                                "/emprestimos/*/devolver").authenticated()
+                        // Empréstimos: qualquer usuário autenticado
+                        .requestMatchers(HttpMethod.POST, "/emprestimos").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/emprestimos/*/devolver").authenticated()
+
+                        // SEMPRE por último
                         .anyRequest().authenticated()
                 )
 
                 // JwtFilter roda ANTES do filtro de autenticação padrão:
-                // ele lê o token, valida e popula o SecurityContext com o perfil do usuário
+                // lê o token, valida e popula o SecurityContext com o perfil do usuário
                 .addFilterBefore(new JwtFilter(tokenService),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // mostra o AuthenticationManager para o AuthService usar no login (email + senha).
+    // Expõe o AuthenticationManager para o AuthService usar no login (email + senha).
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig)
             throws Exception {

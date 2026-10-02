@@ -74,7 +74,7 @@ export default function AutoresPage() {
             <div className="p-3">
               <h3 className="line-clamp-2 text-lg leading-tight">{a.nome}</h3>
               {a.nacionalidade && <p className="text-sm text-ouro">{a.nacionalidade}</p>}
-             <p className="text-xs text-ouro/60">{a.livros?.length ?? 0} livro(s)</p>
+             <p className="text-xs text-ouro/60">{(a.livros ?? []).length} livro(s)</p>
             </div>
           </Link>
         ))}

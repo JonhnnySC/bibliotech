@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.List;
@@ -138,8 +140,19 @@ public class UsuarioController {
     public UsuarioResponse atualizar(
             @Parameter(description = "ID do usuário a ser atualizado", required = true, example = "1")
             @PathVariable Long id,
-            @Valid @RequestBody AtualizarUsuarioRequest request
+            @Valid @RequestBody AtualizarUsuarioRequest request,
+            Authentication auth
     ) {
+        // ADMIN edita qualquer um; os demais só a si mesmos.
+        // O JwtFilter guarda o id (claim "sub") como nome da autenticação.
+        boolean admin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRADOR"));
+        boolean proprio = auth.getName().equals(String.valueOf(id));
+
+        if (!admin && !proprio) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você só pode editar seus próprios dados");
+        }
+
         return usuarioService.atualizar(id, request);
     }
 
@@ -184,7 +197,7 @@ public class UsuarioController {
             @PathVariable Long id,
             @Valid @RequestBody AtualizarPerfilRequest request
     ) {
-        return usuarioService.atualizarPerfil(id, request.perfil());
+        return usuarioService.atualizarPerfil(id, request.perfil(), request.senhaEspecial());
     }
 
     @PatchMapping("/{id}/senha")

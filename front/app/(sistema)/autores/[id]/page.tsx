@@ -36,6 +36,9 @@ export default function DetalheAutorPage() {
   if (carregando) return <p className="text-lg">Carregando...</p>;
   if (erro || !autor) return <p className="rounded border border-red-400/60 bg-red-950/40 p-3 text-red-300">{erro || "Autor não encontrado"}</p>;
 
+  // fallback: se a API não mandar "livros", vira lista vazia
+  const livros = autor.livros ?? [];
+
   return (
     <div className="mx-auto max-w-5xl">
       <nav className="mb-4 text-sm text-ouro/70">
@@ -78,13 +81,13 @@ export default function DetalheAutorPage() {
 
       <section>
         <h2 className="font-gotica mb-4 text-2xl neon-verde">
-          Livros ({autor.livros.length})
+          Livros ({livros.length})
         </h2>
-        {autor.livros.length === 0 ? (
+        {livros.length === 0 ? (
           <p className="text-lg text-ouro/60">Nenhum livro vinculado a este autor.</p>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {autor.livros.map((livro) => (
+            {livros.map((livro) => (
               <Link key={livro.id} href={`/livros/${livro.id}`}
                 className="borda-neon rounded-lg bg-marrom/70 p-4 hover:scale-[1.02] transition-transform">
                 <h3 className="line-clamp-2 text-lg leading-tight">{livro.volume}</h3>

@@ -11,11 +11,15 @@ import br.com.senac.bibliotech.enums.EnumStatusUsuario;
 import br.com.senac.bibliotech.exception.ConflitoException;
 import br.com.senac.bibliotech.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import br.com.senac.bibliotech.entities.Leitor;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Locale;
 
@@ -29,6 +33,12 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // Senha especial exigida para promover alguém a ADMINISTRADOR.
+    // Vem do .env (ADMIN_PROMOTION_PASSWORD) via application.properties.
+    // Vazia = nenhuma promoção a ADMIN é aceita.
+    @Value("${app.admin.senha-promocao:}")
+    private String senhaPromocao;
 
     public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
@@ -88,7 +98,15 @@ public class UsuarioService {
         // entidade gerenciada e faz o UPDATE no commit (dirty checking).
         usuario.setNome(request.nome());
         usuario.setEmail(email);
-        usuario.setCpf(request.cpf());
+
+        // CPF: mesma regra do cadastrar (só dígitos + único). Vazio = mantém o atual.
+        if (request.cpf() != null && !request.cpf().isBlank()) {
+            String cpf = request.cpf().replaceAll("\\D", "");
+            if (usuarioRepository.existsByCpfAndIdNot(cpf, id)) {
+                throw new ConflitoException("Já existe um usuário com este CPF");
+            }
+            usuario.setCpf(cpf);
+        }
 
         return UsuarioResponse.from(usuario);
     }
@@ -101,7 +119,12 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioResponse atualizarPerfil(Long id, EnumPerfil perfil) {
+    public UsuarioResponse atualizarPerfil(Long id, EnumPerfil perfil, String senhaEspecial) {
+        // Promover a ADMINISTRADOR exige a senha especial (configurada fora do código).
+        if (perfil == EnumPerfil.ADMINISTRADOR && !senhaEspecialConfere(senhaEspecial)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Senha especial incorreta");
+        }
+
         Usuario usuario = buscarEntidade(id);
         usuario.setPerfil(perfil);
         // LIMITAÇÃO: se o token do usuário já foi emitido, ele continua com o perfil
@@ -138,6 +161,16 @@ public class UsuarioService {
         return usuarioRepository.findById(id)
                 .filter(usuario -> usuario.getStatus() != EnumStatusUsuario.EXCLUIDO)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", id));
+    }
+
+    // Comparação em tempo constante; se a senha não estiver configurada, nega sempre.
+    private boolean senhaEspecialConfere(String informada) {
+        if (senhaPromocao == null || senhaPromocao.isBlank() || informada == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                senhaPromocao.getBytes(StandardCharsets.UTF_8),
+                informada.getBytes(StandardCharsets.UTF_8));
     }
 
     // Locale.ROOT: o resultado não depende do idioma da máquina (o turco, por

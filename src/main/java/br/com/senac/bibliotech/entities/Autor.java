@@ -1,10 +1,11 @@
 package br.com.senac.bibliotech.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "autor")
@@ -22,4 +23,15 @@ public class Autor {
     private String nacionalidade;
     private LocalDate dataNascimento;
 
+    @Column(name = "foto_url", length = 500)
+    private String fotoUrl;
+
+    @ManyToMany
+    @JoinTable(
+            name = "autor_livro",
+            joinColumns = @JoinColumn(name = "autor_id"),
+            inverseJoinColumns = @JoinColumn(name = "livro_id")
+    )
+    @Builder.Default
+    private List<Livro> livros = new ArrayList<>();
 }

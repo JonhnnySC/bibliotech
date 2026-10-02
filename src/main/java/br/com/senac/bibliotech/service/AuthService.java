@@ -11,10 +11,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.Locale;
 
-/**
- * Orquestra o login: acha o usuário, confere a senha, gera o token.
- * Cada peça tem seu dono: o repository busca, o PasswordEncoder compara,
- * o TokenService assina. O AuthService só coordena.
+/*
+  Orquestra o login: acha o usuário, confere a senha, gera o token.
+ Cada peça tem seu dono: o repository busca, o PasswordEncoder compara,
+  o TokenService assina. O AuthService só coordena.
  */
 @Service
 public class AuthService {

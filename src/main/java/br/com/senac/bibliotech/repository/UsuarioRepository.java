@@ -33,5 +33,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // List, e não Optional<List>: coleção vazia já significa "nada encontrado".
     List<Usuario> findByStatusNot(EnumStatusUsuario status);
 
+    boolean existsByCpfAndIdNot(String cpf, Long id);
+
     boolean existsByCpf(String cpf);
 }
