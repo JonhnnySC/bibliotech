@@ -8,6 +8,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.lang.classfile.instruction.ReturnInstruction;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -68,5 +69,6 @@ public class TokenService {
         } catch (JWTVerificationException e) {
             return Optional.empty();
         }
+
     }
 }

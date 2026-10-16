@@ -4,7 +4,7 @@ import br.com.senac.bibliotech.application.dto.AutorRequest;
 import br.com.senac.bibliotech.application.dto.AutorResponse;
 import br.com.senac.bibliotech.domain.entities.Autor;
 import br.com.senac.bibliotech.domain.entities.Livro;
-import br.com.senac.bibliotech.exception.RecursoNaoEncontradoException;
+import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.domain.repository.AutorRepository;
 import br.com.senac.bibliotech.domain.repository.LivroRepository;
 import lombok.RequiredArgsConstructor;

@@ -2,6 +2,7 @@ package br.com.senac.bibliotech.domain.entities;
 
 import br.com.senac.bibliotech.domain.enums.EnumPerfil;
 import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
+import br.com.senac.bibliotech.domain.valueObject.CPF;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -24,7 +25,8 @@ public class Usuario {
     private String nome;
     private String email;
     private String senha;
-    private String cpf;
+    @Embedded
+    private CPF cpf;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -35,4 +37,6 @@ public class Usuario {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
+
+    //OBRIGO MEU CONSTRUTOR A UILDAR UM CPF
 }

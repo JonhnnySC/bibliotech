@@ -1,4 +1,4 @@
-package br.com.senac.bibliotech.exception;
+package br.com.senac.bibliotech.domain.exception;
 
 /*
  Lançada pelos services quando um registro não existe. O ApiExceptionHandler

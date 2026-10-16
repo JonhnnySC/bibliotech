@@ -322,3 +322,130 @@ presentation ──► application ──► domain ◄── infra
 8. **Fechamento:** `ArquiteturaTest` (ArchUnit) e `ModulosTest` (Modulith).
 
 Regra prática para qualquer arquivo novo: pergunte "isso mudaria se eu trocasse o Postgres, o Spring ou o JSON?". Se sim, vai para `infra` ou `presentation`. Se não, é `domain` ou `application`.
+
+bibliotech/                                  ← raiz do repo (pom.xml continua aqui)
+├── pom.xml · mvnw · .mvn/                   (sem mudanças)
+├── docker-compose.yml · .env.example · .gitignore · README.md
+├── front/                                   (não muda nesta refatoração)
+├── docs/
+│   ├── arquitetura.md                       (1 página: módulos, regra de dependência, decisões)
+│   ├── adr/                                 (001-ids-entre-modulos.md, 002-leitor-herda-usuario.md ...)
+│   └── …suas notas atuais
+└── src/
+├── main/
+│   ├── java/br/com/senac/bibliotech/
+│   │   ├── BibliotechApplication.java
+│   │   │
+│   │   ├── config/                      ▌composição da aplicação (transversal)
+│   │   │   ├── CorsConfiguration.java            (origem vinda de property)
+│   │   │   ├── SwaggerConfiguration.java
+│   │   │   ├── ClockConfiguration.java           (Clock injetável: testa prazo e atraso)
+│   │   │   ├── SecurityConfiguration.java        (regras de rota)
+│   │   │   ├── JwtFilter.java                    (usa TokenProvider; monta ROLE_<perfil>)
+│   │   │   ├── RestAuthenticationEntryPoint.java (401 em JSON)
+│   │   │   └── RestAccessDeniedHandler.java      (403 em JSON)
+│   │   │
+│   │   ├── compartilhado/               ▌só o que TODOS os módulos usam
+│   │   │   ├── exception/
+│   │   │   │   ├── RecursoNaoEncontradoException.java   (404)
+│   │   │   │   ├── ConflitoException.java               (409: estado atual impede)
+│   │   │   │   └── RegraDeNegocioException.java         (422: regra violada)
+│   │   │   └── web/ApiExceptionHandler.java
+│   │   │
+│   │   ├── usuarios/                    ▌quem é o usuário, login, perfil
+│   │   │   ├── api/                              (contrato PÚBLICO, o que outros módulos enxergam)
+│   │   │   │   ├── LeitorApi.java                (buscarResumo(id), buscarResumos(ids))
+│   │   │   │   └── LeitorResumo.java             (record: id, nome, podeEmprestar)
+│   │   │   ├── web/
+│   │   │   │   ├── AuthController.java · UsuarioController.java
+│   │   │   │   └── request/  LoginRequest, UsuarioRequest, AtualizarUsuarioRequest,
+│   │   │   │                 AtualizarStatusRequest, AtualizarPerfilRequest, AlterarSenhaRequest
+│   │   │   ├── application/
+│   │   │   │   ├── AuthService.java              (login)
+│   │   │   │   ├── UsuarioService.java           (cadastrar, listar, atualizar, status, perfil, senha, excluir)
+│   │   │   │   ├── LeitorConsulta.java           (implements LeitorApi)
+│   │   │   │   ├── TokenProvider.java            (PORTA: gerar(usuario), validar(token))
+│   │   │   │   ├── TokenClaims.java              (record: usuarioId, perfil)
+│   │   │   │   └── dto/  LoginResultado, UsuarioResultado, TokenGerado
+│   │   │   ├── domain/
+│   │   │   │   ├── Usuario.java                  (RAIZ: bloquear(), ativar(), excluir(),
+│   │   │   │   │                                  alterarPerfil(), trocarSenha(hash), podeEmprestar())
+│   │   │   │   ├── Leitor.java                   (extends Usuario; SEM perfil/status duplicados)
+│   │   │   │   ├── Perfil.java · StatusUsuario.java
+│   │   │   │   ├── Cpf.java · Email.java         (value objects com validação)
+│   │   │   │   ├── UsuarioRepository.java · LeitorRepository.java   (interfaces puras)
+│   │   │   │   └── exception/  CredenciaisInvalidasException, EmailJaCadastradoException,
+│   │   │   │                   CpfJaCadastradoException, SenhaAtualIncorretaException
+│   │   │   └── infra/
+│   │   │       ├── persistence/  CpfConverter, EmailConverter (a coluna continua varchar),
+│   │   │       │                 JpaUsuarioRepository, JpaLeitorRepository (Spring Data)
+│   │   │       └── security/     Auth0TokenProvider (era service/TokenService; implements TokenProvider)
+│   │   │
+│   │   ├── acervo/                      ▌o que a biblioteca possui: livro e a cópia física
+│   │   │   ├── api/
+│   │   │   │   ├── ExemplarApi.java              (emprestar(id), devolver(id), buscarResumos(ids))
+│   │   │   │   └── ExemplarResumo.java           (record: id, livroId, tituloLivro, status)
+│   │   │   ├── web/
+│   │   │   │   ├── LivroController · AutorController · ExemplarController (corrige o "COntroller")
+│   │   │   │   │   · EditoraController (opcional)
+│   │   │   │   └── request/  LivroRequest, AutorRequest, EditoraRequest, ExemplarRequest,
+│   │   │   │                 AtualizarStatusExemplarRequest
+│   │   │   ├── application/
+│   │   │   │   ├── LivroService · AutorService · EditoraService · ExemplarService
+│   │   │   │   ├── ExemplarConsulta.java         (implements ExemplarApi)
+│   │   │   │   └── dto/  LivroResultado (com capaUrl), AutorResultado, EditoraResultado,
+│   │   │   │             ExemplarResultado
+│   │   │   ├── domain/
+│   │   │   │   ├── Livro.java                    (RAIZ; N:N com Autor via autor_livro; N:1 com Editora)
+│   │   │   │   ├── Isbn.java                     (value object)
+│   │   │   │   ├── Autor.java · Editora.java
+│   │   │   │   ├── Exemplar.java                 (RAIZ: emprestar(), devolver(), marcarDanificado(),
+│   │   │   │   │                                  marcarPerdido(), estaDisponivel())
+│   │   │   │   ├── StatusExemplar.java · GeneroLiterario.java (decidir: usar ou apagar)
+│   │   │   │   ├── LivroRepository · AutorRepository · EditoraRepository · ExemplarRepository
+│   │   │   │   └── exception/  IsbnInvalidoException, IsbnJaCadastradoException,
+│   │   │   │                   ExemplarIndisponivelException, TransicaoStatusInvalidaException
+│   │   │   └── infra/persistence/  IsbnConverter, JpaLivroRepository, JpaAutorRepository,
+│   │   │                           JpaEditoraRepository, JpaExemplarRepository
+│   │   │                           (BoxLivro: apagar)
+│   │   │
+│   │   └── emprestimos/                 ▌o ato de emprestar, devolver, atrasar, multar
+│   │       ├── web/
+│   │       │   ├── EmprestimoController.java
+│   │       │   └── request/EmprestimoRequest.java      (com @Valid/@NotNull)
+│   │       ├── application/
+│   │       │   ├── RealizarEmprestimo.java       (use case: valida leitor, emprestar exemplar, abre)
+│   │       │   ├── DevolverEmprestimo.java       (use case: devolve, calcula multa, libera exemplar)
+│   │       │   ├── ListarEmprestimosAtivos.java  (monta nomes via LeitorApi e ExemplarApi, em lote)
+│   │       │   └── dto/EmprestimoResultado.java
+│   │       ├── domain/
+│   │       │   ├── Emprestimo.java               (RAIZ: guarda leitorId e exemplarId; abrir(), devolver(),
+│   │       │   │                                  estaAtrasado(hoje); SEM @Setter público)
+│   │       │   ├── StatusEmprestimo.java
+│   │       │   ├── PoliticaEmprestimo.java       (interface: prazoEmDias(), calcularMulta(diasAtraso))
+│   │       │   ├── PoliticaFixa.java             (implementação: prazo e valor diário fixos)
+│   │       │   ├── EmprestimoRepository.java     (interface pura)
+│   │       │   └── exception/  EmprestimoJaDevolvidoException, LeitorBloqueadoException,
+│   │       │                   LeitorComAtrasoException
+│   │       └── infra/
+│   │           ├── persistence/JpaEmprestimoRepository.java
+│   │           └── PoliticaEmprestimoConfig.java (@ConfigurationProperties: prazo, multa diária)
+│   │
+│   └── resources/
+│       ├── application.properties            (só o comum; sem enable_lazy_load_no_trans)
+│       ├── application-dev.properties        (show-sql, DEBUG do security)
+│       └── db/
+│           ├── migration/
+│           │   ├── V1 … V7                   (NUNCA editar)
+│           │   ├── V8__integridade_e_admin.sql    (admin, UNIQUE email/cpf, índice parcial de empréstimo aberto)
+│           │   ├── V9__multa_emprestimo.sql       (valor_multa)
+│           │   └── V10__livro_editora.sql         (editora_id no livro; opcional: renomear volume → titulo)
+│           └── seed-dev/                     (dados de exemplo só no profile dev)
+│
+└── test/java/br/com/senac/bibliotech/
+├── usuarios/domain/          CpfTest, EmailTest, UsuarioTest
+├── usuarios/application/     AuthServiceTest                       (Mockito)
+├── acervo/domain/            IsbnTest, ExemplarTest
+├── emprestimos/domain/       EmprestimoTest, PoliticaFixaTest
+├── emprestimos/application/  RealizarEmprestimoTest, DevolverEmprestimoTest
+└── BibliotechApplicationTests.java

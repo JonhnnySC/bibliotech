@@ -1,4 +1,4 @@
-package br.com.senac.bibliotech.exception;
+package br.com.senac.bibliotech.domain.exception;
 
 /*
  Lançada quando a requisição é válida, mas conflita com o estado atual do sistema.

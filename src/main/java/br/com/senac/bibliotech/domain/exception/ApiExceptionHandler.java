@@ -1,4 +1,4 @@
-package br.com.senac.bibliotech.exception;
+package br.com.senac.bibliotech.domain.exception;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;

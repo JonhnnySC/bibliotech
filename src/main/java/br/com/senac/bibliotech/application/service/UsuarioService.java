@@ -8,8 +8,8 @@ import br.com.senac.bibliotech.domain.entities.Leitor;
 import br.com.senac.bibliotech.domain.entities.Usuario;
 import br.com.senac.bibliotech.domain.enums.EnumPerfil;
 import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
-import br.com.senac.bibliotech.exception.ConflitoException;
-import br.com.senac.bibliotech.exception.RecursoNaoEncontradoException;
+import br.com.senac.bibliotech.domain.exception.ConflitoException;
+import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -66,7 +66,7 @@ public class UsuarioService {
                 .nome(request.nome())
                 .email(email)
                 .senha(passwordEncoder.encode(request.senha())) // grava o HASH, nunca a senha
-                .cpf(cpf)
+
                 .perfil(EnumPerfil.LEITOR)
                 .status(EnumStatusUsuario.ATIVO)
                 .build();
@@ -110,7 +110,7 @@ public class UsuarioService {
             if (usuarioRepository.existsByCpfAndIdNot(cpf, id)) {
                 throw new ConflitoException("Já existe um usuário com este CPF");
             }
-            usuario.setCpf(cpf);
+
         }
 
         return UsuarioResponse.from(usuario);

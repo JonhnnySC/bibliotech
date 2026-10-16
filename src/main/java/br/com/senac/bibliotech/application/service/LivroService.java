@@ -3,7 +3,7 @@ package br.com.senac.bibliotech.application.service;
 import br.com.senac.bibliotech.application.dto.LivroRequest;
 import br.com.senac.bibliotech.application.dto.LivroResponse;
 import br.com.senac.bibliotech.domain.entities.Livro;
-import br.com.senac.bibliotech.exception.RecursoNaoEncontradoException;
+import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.domain.repository.LivroRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
