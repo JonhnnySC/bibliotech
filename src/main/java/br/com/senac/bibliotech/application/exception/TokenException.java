@@ -1,4 +1,4 @@
-package br.com.senac.bibliotech.domain.exception;
+package br.com.senac.bibliotech.application.exception;
 
 public class TokenException extends RuntimeException {
     public TokenException(String message) {

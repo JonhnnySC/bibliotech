@@ -1,4 +1,4 @@
-package br.com.senac.bibliotech.application.service;
+package br.com.senac.bibliotech.infrastructure.security;
 
 import br.com.senac.bibliotech.domain.entities.Usuario;
 import com.auth0.jwt.JWT;
@@ -8,7 +8,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.lang.classfile.instruction.ReturnInstruction;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

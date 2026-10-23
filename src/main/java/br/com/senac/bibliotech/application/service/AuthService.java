@@ -4,8 +4,9 @@ import br.com.senac.bibliotech.application.dto.LoginRequest;
 import br.com.senac.bibliotech.application.dto.LoginResponse;
 import br.com.senac.bibliotech.domain.entities.Usuario;
 import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
-import br.com.senac.bibliotech.domain.exception.CredenciaisInvalidasException;
+import br.com.senac.bibliotech.application.exception.CredenciaisInvalidasException;
 import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
+import br.com.senac.bibliotech.infrastructure.security.TokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

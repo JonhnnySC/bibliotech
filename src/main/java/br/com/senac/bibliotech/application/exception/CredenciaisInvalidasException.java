@@ -1,4 +1,4 @@
-package br.com.senac.bibliotech.domain.exception;
+package br.com.senac.bibliotech.application.exception;
 
 /* Lançada no login. A mensagem é SEMPRE a mesma, seja email inexistente, senha erra
  ou usuário inativo. Se a API dissesse "email não encontrado", um atacante poderia

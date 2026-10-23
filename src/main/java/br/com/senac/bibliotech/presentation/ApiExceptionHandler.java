@@ -1,5 +1,9 @@
-package br.com.senac.bibliotech.domain.exception;
+package br.com.senac.bibliotech.presentation;
 
+import br.com.senac.bibliotech.domain.exception.ConflitoException;
+import br.com.senac.bibliotech.application.exception.CredenciaisInvalidasException;
+import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
+import br.com.senac.bibliotech.application.exception.TokenException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;

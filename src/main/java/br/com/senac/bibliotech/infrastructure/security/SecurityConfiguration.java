@@ -1,6 +1,5 @@
-package br.com.senac.bibliotech.infrastructure.config;
+package br.com.senac.bibliotech.infrastructure.security;
 
-import br.com.senac.bibliotech.application.service.TokenService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -45,31 +44,35 @@ public class SecurityConfiguration {
                         ).permitAll()
 
                         // Preflight do CORS (o navegador manda OPTIONS antes da request real)
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS,
+                                "/**")
+                        .permitAll()
 
                         // Apenas ADMIN
                         .requestMatchers(HttpMethod.PATCH,
                                 "/usuarios/*/perfil",
-                                "/usuarios/*/status").hasRole("ADMINISTRADOR")
+                                "/usuarios/*/status")
+                        .hasRole("ADMINISTRADOR")
+
                         .requestMatchers(HttpMethod.DELETE,
                                 "/usuarios/**").hasRole("ADMINISTRADOR")
 
                         // ADMIN ou BIBLIOTECARIO
                         .requestMatchers(HttpMethod.POST,
-                                "/livros", "/autores", "/exemplares", "/usuarios"
-                        ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
+                                "/livros", "/autores", "/exemplares", "/usuarios")
+                        .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
                         .requestMatchers(HttpMethod.PUT,
-                                "/livros/**", "/autores/**"
-                        ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
+                                "/livros/**", "/autores/**")
+                        .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
                         .requestMatchers(HttpMethod.DELETE,
-                                "/livros/**", "/autores/**", "/exemplares/**"
-                        ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
+                                "/livros/**", "/autores/**", "/exemplares/**")
+                        .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
                         .requestMatchers(HttpMethod.PATCH,
-                                "/exemplares/*/status"
-                        ).hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
+                                "/exemplares/*/status")
+                        .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
                         // Empréstimos: qualquer usuário autenticado
                         .requestMatchers(HttpMethod.POST, "/emprestimos").authenticated()

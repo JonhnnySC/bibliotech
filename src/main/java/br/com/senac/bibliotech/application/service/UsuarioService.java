@@ -11,6 +11,7 @@ import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
 import br.com.senac.bibliotech.domain.exception.ConflitoException;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
+import br.com.senac.bibliotech.infrastructure.security.TokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;

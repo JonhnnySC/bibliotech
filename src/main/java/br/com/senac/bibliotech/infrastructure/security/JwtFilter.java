@@ -1,6 +1,5 @@
-package br.com.senac.bibliotech.infrastructure.config;
+package br.com.senac.bibliotech.infrastructure.security;
 
-import br.com.senac.bibliotech.application.service.TokenService;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -35,6 +34,19 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+
+        /*try {
+            var jwtValidator = tokenService.validar(authHeader.substring(7));
+
+            var user = new UsernamePasswordAuthenticationToken(
+                    jwtValidator.getSubject(),
+                    null,
+                    List.of()
+            );
+            //quem ta logado é o user tal, por que o subkject esta armazenado
+
+            SecurityContextHolder.getContext().setAuthentication(user);
+        } */
 
         String token = authHeader.substring(7);
 
