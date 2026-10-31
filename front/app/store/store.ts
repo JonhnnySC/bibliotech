@@ -1,7 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
 
-// O STORE é a "estante" que reúne todos os slices
 export const store = configureStore({
   reducer: { auth: authReducer },
 });

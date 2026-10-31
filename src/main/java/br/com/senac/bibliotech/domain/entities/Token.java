@@ -9,8 +9,8 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /*
-  Token gerado pelo s e SALVO no banco na volta conferir
-  a assinatura do JWT ve se foi mesmo a gente que gero este token.
+ * Token gerado pelo servidor e SALVO no banco (Aula 3): na volta, além de conferir
+ * a assinatura do JWT, conferimos se foi mesmo a gente que gerou este token.
  */
 @Entity
 @Table(name = "token")
