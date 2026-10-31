@@ -1,20 +1,12 @@
-package br.com.senac.bibliotech.domain.valueobject;
+package br.com.senac.bibliotech.domain.valueObject;
 
 import java.util.Objects;
 
-/*
- * VALUE OBJECT de CPF (Aula 15.10): a regra de validação é programada UMA vez, aqui,
- * e não se repete em service nem em entidade. Não é uma tabela: o Usuario guarda
- * como @Embedded e o valor vira a coluna "cpf".
- *
- * O construtor recusa CPF inválido, então é impossível ter um CPF inválido no domínio.
- * O valor é guardado só com dígitos (mesma regra que o banco já usa).
- */
+
 public class CPF {
 
     private String cpf;
 
-    // Exigido pelo Hibernate para reconstruir o objeto a partir do banco
     public CPF() {
         this.cpf = "";
     }
@@ -43,12 +35,10 @@ public class CPF {
             return false;
         }
 
-        // Descarta CPFs com todos os dígitos iguais (ex: 000.000.000-00)
         if (cpf.matches("(\\d)\\1{10}")) {
             return false;
         }
 
-        // Cálculo do 1º dígito verificador
         int soma = 0;
         for (int i = 0; i < 9; i++) {
             soma += Character.getNumericValue(cpf.charAt(i)) * (10 - i);
@@ -61,7 +51,6 @@ public class CPF {
             return false;
         }
 
-        // Cálculo do 2º dígito verificador
         soma = 0;
         for (int i = 0; i < 10; i++) {
             soma += Character.getNumericValue(cpf.charAt(i)) * (11 - i);

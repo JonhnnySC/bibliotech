@@ -13,7 +13,7 @@ import br.com.senac.bibliotech.domain.exception.ConflitoException;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.domain.repository.BibliotecaRepository;
 import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
-import br.com.senac.bibliotech.domain.valueobject.CPF;
+import br.com.senac.bibliotech.domain.valueObject.CPF;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;

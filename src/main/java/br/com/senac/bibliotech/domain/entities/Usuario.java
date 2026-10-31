@@ -2,7 +2,7 @@ package br.com.senac.bibliotech.domain.entities;
 
 import br.com.senac.bibliotech.domain.enums.EnumPerfil;
 import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
-import br.com.senac.bibliotech.domain.valueobject.CPF;
+import br.com.senac.bibliotech.domain.valueObject.CPF;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

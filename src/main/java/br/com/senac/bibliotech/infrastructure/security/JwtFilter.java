@@ -14,9 +14,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /*
- * Lê o "Authorization: Bearer ...", pede ao TokenService para verificar (JWT + banco)
- * e coloca o UsuarioLogado como principal do SecurityContext. Daí em diante, qualquer
- * parte do sistema sabe quem está logado e quais são as roles dele.
+ Lê o "Authorization: Bearer, pede ao TokenService para verificar JWTe banco
+ e coloca o UsuarioLogado como principal do SecurityContext. Daí em diante, qualquer
+ parte do sistema sabe quem está logado e quais são as roles dele.
  */
 public class JwtFilter extends OncePerRequestFilter {
 

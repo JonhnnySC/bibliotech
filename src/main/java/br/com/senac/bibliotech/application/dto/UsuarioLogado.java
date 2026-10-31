@@ -1,7 +1,7 @@
 package br.com.senac.bibliotech.application.dto;
 
 import br.com.senac.bibliotech.domain.entities.Usuario;
-import br.com.senac.bibliotech.domain.valueobject.CPF;
+import br.com.senac.bibliotech.domain.valueObject.CPF;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
