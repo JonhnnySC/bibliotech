@@ -18,6 +18,7 @@ public interface EmprestimoRepository extends JpaRepository<Emprestimo, Long> {
             "JOIN FETCH e.leitor " +
             "JOIN FETCH e.exemplar ex " +
             "LEFT JOIN FETCH ex.livro " +
+            "LEFT JOIN FETCH e.registradoPor " +
             "WHERE e.statusEmprestimo = :statusEmprestimo")
 
     List<Emprestimo> findByStatusEmprestimo(EnumStatusEmprestimo statusEmprestimo);

@@ -38,6 +38,12 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
+    // Regra de domínio violada (ex.: "CPF Invalido!", "Email Invalido!") = 400
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail tratarValorInvalido(IllegalArgumentException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail tratarIntegridade(DataIntegrityViolationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,

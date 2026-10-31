@@ -1,4 +1,10 @@
 // Utilitários de capa: normaliza ISBN, monta URL Open Library e busca no Google Books.
+import axios from "axios";
+
+// Só o pedaço da resposta do Google Books que usamos (tipar tudo seria exagero).
+type GoogleBooksResposta = {
+  items?: { volumeInfo?: { imageLinks?: { thumbnail?: string; smallThumbnail?: string } } }[];
+};
 
 /** Remove tudo que não é dígito/X e padroniza maiúsculo. "978-85-3591-484-3" -> "9788535914843" */
 export function normalizarIsbn(isbn: string): string {
@@ -53,10 +59,14 @@ export async function buscarCapaGoogleBooks(isbn: string): Promise<string | null
   }
 
   try {
-    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${chave}`);
-    if (!r.ok) throw new Error("http " + r.status);
-    
-    const json = await r.json();
+    // axios PURO (não a instância `api`/`http`): essa instância injeta o JWT do nosso
+    // backend em toda requisição, e ele NÃO pode ser enviado para um domínio de terceiros.
+    // O axios já rejeita status fora de 2xx, então não precisa do `if (!r.ok)` do fetch.
+    // `params` monta e codifica a query string; `timeout` evita travar a tela se o Google demorar.
+    const { data: json } = await axios.get<GoogleBooksResposta>(
+      "https://www.googleapis.com/books/v1/volumes",
+      { params: { q: `isbn:${chave}` }, timeout: 8000 },
+    );
     const thumb: string | undefined =
       json?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail ??
       json?.items?.[0]?.volumeInfo?.imageLinks?.smallThumbnail;

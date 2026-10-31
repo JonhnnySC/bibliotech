@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import StoreProvider from "./components/StoreProvider";
 
 // next/font/local em vez de next/font/google:
 // o Google Fonts às vezes devolve URLs que o Turbopack não consegue ler
@@ -40,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           data-scroll-behavior="smooth"
       >
       <body suppressHydrationWarning className="bg-noite text-ouro-neon">
-      {children}
+      <StoreProvider>{children}</StoreProvider>
       </body>
       </html>
   );

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import EmprestimosTable from "./components/EmprestimosTable";
-import { api } from "../../lib/api";
+import { listarEmprestimosAtivos, devolverEmprestimo } from "@/app/services/emprestimoService";
 import { diasRestantes } from "../../lib/datas";
 import type { Emprestimo } from "../../types/usuario";
 
@@ -20,7 +20,7 @@ export default function EmprestimosPage() {
   // Busca inicial dos empréstimos ativos
   useEffect(() => {
     let vivo = true;
-    api<Emprestimo[]>("/emprestimos/ativos")
+    listarEmprestimosAtivos()
       .then((d) => { if (vivo) { setAtivos(d); setErro(""); } })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar empréstimos"); })
       .finally(() => { if (vivo) setCarregando(false); });
@@ -30,7 +30,7 @@ export default function EmprestimosPage() {
   /** Recarga usada depois de uma devolução. */
   async function recarregar() {
     try {
-      setAtivos(await api<Emprestimo[]>("/emprestimos/ativos"));
+      setAtivos(await listarEmprestimosAtivos());
       setErro("");
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao carregar empréstimos");
@@ -43,7 +43,7 @@ export default function EmprestimosPage() {
   async function devolver(id: number) {
     if (!confirm("Confirmar a devolução deste exemplar?")) return;
     try {
-      await api(`/emprestimos/${id}/devolver`, { method: "PATCH" });
+      await devolverEmprestimo(id);
       recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao devolver");

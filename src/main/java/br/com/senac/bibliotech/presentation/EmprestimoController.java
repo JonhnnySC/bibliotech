@@ -1,7 +1,7 @@
 package br.com.senac.bibliotech.presentation;
 
 import br.com.senac.bibliotech.application.dto.EmprestimoRequest;
-import br.com.senac.bibliotech.domain.entities.Emprestimo;
+import br.com.senac.bibliotech.application.dto.EmprestimoResponse;
 import br.com.senac.bibliotech.application.service.EmprestimoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,8 +32,8 @@ public class EmprestimoController {
     })
 
 
-    public ResponseEntity<Emprestimo> criar(@RequestBody EmprestimoRequest emprestimoRequest) {
-        Emprestimo novoEmprestimo = emprestimoService.realizarEmprestimo(
+    public ResponseEntity<EmprestimoResponse> criar(@RequestBody EmprestimoRequest emprestimoRequest) {
+        EmprestimoResponse novoEmprestimo = emprestimoService.realizarEmprestimo(
                 emprestimoRequest.leitorId(),
                 emprestimoRequest.exemplarId());
 
@@ -45,7 +45,7 @@ public class EmprestimoController {
     @GetMapping("/ativos")
     @Operation(summary = "Listagem dos empréstimos ativos",
             description = "Retornar todos os emprestimos que ainda não foram devolvidos")
-    public ResponseEntity<List<Emprestimo>> listarAtivos() {
+    public ResponseEntity<List<EmprestimoResponse>> listarAtivos() {
         return ResponseEntity.ok(emprestimoService.listarEmprestimos());
     }
 

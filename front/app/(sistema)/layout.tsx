@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
+import { lerSessao } from "@/app/services/sessao";
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
 
   // sem token → volta para o login
   useEffect(() => {
-    if (!localStorage.getItem("token")) router.replace("/login");
+    if (!lerSessao().token) router.replace("/login");
     else setPronto(true);
   }, [router]);
 

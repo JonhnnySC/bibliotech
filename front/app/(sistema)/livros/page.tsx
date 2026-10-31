@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Capa from "../../components/Capa";
-import { api } from "../../lib/api";
+import { listarLivros } from "@/app/services/livroService";
 import type { Livro as LivroT } from "../../types/usuario";
 
 const anoLancamento = (iso?: string | null) => (iso ? iso.split("-")[0] : "");
@@ -15,7 +15,7 @@ export default function LivrosPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<LivroT[]>("/livros")
+    listarLivros()
       .then((d) => { if (vivo) { setLivros(d); setErro(""); } })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar os livros"); })
       .finally(() => { if (vivo) setCarregando(false); });

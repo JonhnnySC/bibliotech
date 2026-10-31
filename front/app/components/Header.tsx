@@ -1,16 +1,18 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Livro from "./Livro";
+import { limparSessao } from "@/app/services/sessao";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { sessaoEncerrada } from "../store/authSlice";
 
 export default function Header({ onToggle }: { onToggle: () => void }) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  useEffect(() => setEmail(localStorage.getItem("email") ?? ""), []);
+  const dispatch = useAppDispatch();
+  const email = useAppSelector((estado) => estado.auth.email) ?? "";
 
   function sair() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
+    limparSessao();
+    dispatch(sessaoEncerrada());
     router.push("/login");
   }
 

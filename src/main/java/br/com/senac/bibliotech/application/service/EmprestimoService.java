@@ -1,78 +1,67 @@
 package br.com.senac.bibliotech.application.service;
 
+import br.com.senac.bibliotech.application.dto.EmprestimoResponse;
 import br.com.senac.bibliotech.domain.entities.Emprestimo;
 import br.com.senac.bibliotech.domain.entities.Exemplar;
 import br.com.senac.bibliotech.domain.entities.Leitor;
+import br.com.senac.bibliotech.domain.entities.Usuario;
 import br.com.senac.bibliotech.domain.enums.EnumStatusEmprestimo;
-import br.com.senac.bibliotech.domain.enums.EnumStatusExemplar;
-import br.com.senac.bibliotech.domain.exception.ConflitoException;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.domain.repository.EmprestimoRepository;
 import br.com.senac.bibliotech.domain.repository.ExemplarRepository;
 import br.com.senac.bibliotech.domain.repository.LeitorRepository;
+import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 
+/*
+ * Service = ORQUESTRAÇÃO (Aula 15.10): busca, chama a entidade e salva.
+ * As regras (exemplar disponível, prazo, devolução) moram em Emprestimo e Exemplar.
+ */
 @Service
-@RequiredArgsConstructor // aparente que é bom pra gerar construtor com todos os campos final
+@RequiredArgsConstructor
 public class EmprestimoService {
 
     private final EmprestimoRepository emprestimoRepository;
     private final LeitorRepository leitorRepository;
     private final ExemplarRepository exemplarRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
 
     @Transactional
-    public Emprestimo realizarEmprestimo(Long leitorId, Long exemplarId) {
+    public EmprestimoResponse realizarEmprestimo(Long leitorId, Long exemplarId) {
         Leitor leitor = leitorRepository.findById(leitorId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor " + leitorId + " não encontrado"));
         Exemplar exemplar = exemplarRepository.findById(exemplarId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar " + exemplarId + " não encontrado"));
 
-        if (exemplar.getStatus() != EnumStatusExemplar.DISPONIVEL) {
-            throw new ConflitoException("Este exemplar não está disponível");
-        }
+        // Quem registra é o usuário logado (token), o front não informa (Aula 3)
+        Usuario registradoPor = usuarioRepository.getReferenceById(usuarioService.getUsuarioLogado().id());
 
-        Emprestimo emprestimo = Emprestimo.builder()
-                .leitor(leitor)
-                .exemplar(exemplar)
-                .dataEmprestimo(LocalDate.now())
-                .dataPrevistaDevolucao(LocalDate.now().plusDays(14)) // ✅ nunca dataDevolucao aqui
-                .statusEmprestimo(EnumStatusEmprestimo.ATIVO)
-                .build();
+        Emprestimo emprestimo = Emprestimo.registrar(leitor, exemplar, registradoPor);
 
-        exemplar.setStatus(EnumStatusExemplar.EMPRESTADO);
         exemplarRepository.save(exemplar);
-        Emprestimo salvo = emprestimoRepository.save(emprestimo);
-
-        salvo.getExemplar().getLivro(); // ✅ inicializa o proxy lazy dentro da transação
-        return salvo;
+        return EmprestimoResponse.from(emprestimoRepository.save(emprestimo));
     }
 
-    //analise de se o emprestimo exziste e depois se foi devolviodo, se devolvido ok
     @Transactional
     public void devolverEmprestimo(Long emprestimoId) {
         Emprestimo emprestimo = emprestimoRepository.findById(emprestimoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Emprestimo: " + emprestimoId + " não encontrado"));
 
-        if (emprestimo.getStatusEmprestimo() == EnumStatusEmprestimo.DEVOLVIDO) {
-            throw new ConflitoException("Este emprestimo já foi devolvido");
-        }
+        emprestimo.registrarDevolucao();
 
-        //atualização de emprestimo e liberação do negocio denvoc
-        emprestimo.setStatusEmprestimo(EnumStatusEmprestimo.DEVOLVIDO);
-        emprestimo.setDataDevolucao(LocalDate.now());
         emprestimoRepository.save(emprestimo);
-
-        Exemplar exemplar = emprestimo.getExemplar();
-        exemplar.setStatus(EnumStatusExemplar.DISPONIVEL);
-        exemplarRepository.save(exemplar);
+        exemplarRepository.save(emprestimo.getExemplar());
     }
+
     @Transactional(readOnly = true)
-    public List<Emprestimo> listarEmprestimos() {
-        return emprestimoRepository.findByStatusEmprestimo(EnumStatusEmprestimo.ATIVO);
+    public List<EmprestimoResponse> listarEmprestimos() {
+        return emprestimoRepository.findByStatusEmprestimo(EnumStatusEmprestimo.ATIVO).stream()
+                .map(EmprestimoResponse::from)
+                .toList();
     }
 }

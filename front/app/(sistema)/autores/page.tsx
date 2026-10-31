@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 // Corrija os caminhos aqui:
-import { api } from "../../lib/api";
+import { listarAutores } from "@/app/services/autorService";
 import type { Autor } from "../../types/autor";
 
 // ... resto do seu código
@@ -16,7 +16,7 @@ export default function AutoresPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<Autor[]>("/autores")
+    listarAutores()
       .then((d) => { if (vivo) { setAutores(d); setErro(""); } })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar autores"); })
       .finally(() => { if (vivo) setCarregando(false); });

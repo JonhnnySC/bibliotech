@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import AutorForm from "../../components/AutorForm";
-import { api } from "../../../../lib/api";
+import { buscarAutor } from "@/app/services/autorService";
 import type { Autor, AutorForm as AutorFormType } from "../../../../types/autor";
 
 export default function EditarAutorPage() {
@@ -16,7 +16,7 @@ export default function EditarAutorPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<Autor>(`/autores/${id}`)
+    buscarAutor(id)
       .then((d) => {
         if (vivo) setAutor(d);
       })

@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import UsuarioForm, { valoresDoUsuario } from "../../components/UsuarioForm";
-import { api } from "../../../../lib/api";
-import type { Usuario } from "../../../../types/usuario";
+import UsuarioForm, { valoresDoUsuario } from "../components/UsuarioForm";
+import { listarUsuarios } from "@/app/services/usuarioService";
+import type { Usuario } from "../../../types/usuario";
 
 /** Rota /usuarios/[id]/editar — hidrata o form compartilhado com o usuário atual. */
 export default function EditarUsuarioPage() {
@@ -19,7 +19,7 @@ export default function EditarUsuarioPage() {
     useEffect(() => {
     let vivo = true;
     // Lista e pega o usuário pelo id (backend não expõe GET por id público aqui)
-    api<Usuario[]>("/usuarios")
+    listarUsuarios()
         .then((d: Usuario[]) => {                       // ← tipo explícito mata o TS7006
         if (vivo) setUsuario(d.find((u) => u.id === id) ?? null);
         })

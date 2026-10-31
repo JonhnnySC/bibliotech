@@ -12,7 +12,9 @@ export interface Exemplar {
   dataCompra?: string;
 }
 export interface Emprestimo {
-  id: number; leitor: Usuario; exemplar: Exemplar;
+  id: number; leitor: Usuario;
+  exemplar: Pick<Exemplar, "id" | "livroId" | "livro" | "statusExemplar">;
+  registradoPor?: string | null;   // quem registrou (vem do usuário logado, pelo token)
   dataEmprestimo: string; dataPrevistaDevolucao: string; dataDevolucao: string | null;
   statusEmprestimo: "ATIVO" | "DEVOLVIDO" | "ATRASADO";
 }

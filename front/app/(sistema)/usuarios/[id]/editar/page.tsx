@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { api } from "../../../../lib/api";
+import { listarUsuarios, buscarUsuario, atualizarUsuario, atualizarPerfilUsuario } from "@/app/services/usuarioService";
+import { obterEmailLogado } from "@/app/services/sessao";
 import type { Perfil, Usuario } from "../../../../types/usuario";
 
 const campo = "mb-3 w-full rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]";
@@ -22,11 +23,11 @@ export default function EditarUsuarioPage() {
 
   useEffect(() => {
     let vivo = true;
-    const emailLogado = localStorage.getItem("email");
+    const emailLogado = obterEmailLogado();
 
     Promise.all([
-      api<Usuario>(`/usuarios/${id}`),
-      api<Usuario[]>("/usuarios"),
+      buscarUsuario(id),
+      listarUsuarios(),
     ])
       .then(([u, todos]) => {
         if (!vivo) return;
@@ -52,17 +53,11 @@ export default function EditarUsuarioPage() {
     setSalvando(true);
     try {
       // 1) dados cadastrais
-      await api(`/usuarios/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ nome: form.nome, email: form.email, cpf: form.cpf }),
-      });
+      await atualizarUsuario(id, { nome: form.nome, email: form.email, cpf: form.cpf });
 
       // 2) perfil (só se for ADMIN e se mudou) — endpoint exclusivo de ADMIN
       if (souAdmin && usuario && perfil !== usuario.perfil) {
-        await api(`/usuarios/${id}/perfil`, {
-          method: "PATCH",
-          body: JSON.stringify({ perfil }),
-        });
+        await atualizarPerfilUsuario(id, perfil);
       }
 
       router.push("/usuarios");

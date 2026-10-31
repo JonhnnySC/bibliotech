@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "../../../lib/api";
+import { listarExemplaresPorLivro, criarExemplar, atualizarStatusExemplar } from "@/app/services/exemplarService";
 import type { Exemplar, StatusExemplar } from "../../../types/usuario";
 
 const dataBR = (iso?: string | null) => (iso ? iso.split("-").reverse().join("/") : "—");
@@ -20,7 +20,7 @@ export default function ExemplaresTable({ livroId, podeGerenciar }: Props) {
 
   useEffect(() => {
     let vivo = true;
-    api<Exemplar[]>(`/exemplares/livro/${livroId}`)
+    listarExemplaresPorLivro(livroId)
       .then((d) => { if (vivo) { setExemplares(d); setErro(""); } })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar exemplares"); })
       .finally(() => { if (vivo) setCarregando(false); });
@@ -29,7 +29,7 @@ export default function ExemplaresTable({ livroId, podeGerenciar }: Props) {
 
   async function recarregar() {
     try {
-      setExemplares(await api<Exemplar[]>(`/exemplares/livro/${livroId}`));
+      setExemplares(await listarExemplaresPorLivro(livroId));
       setErro("");
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao carregar exemplares");
@@ -42,15 +42,12 @@ export default function ExemplaresTable({ livroId, podeGerenciar }: Props) {
     e.preventDefault();
     setErro("");
     try {
-      await api("/exemplares", {
-        method: "POST",
-        body: JSON.stringify({
+      await criarExemplar({
           livroId,
           dataImpressao: form.dataImpressao || null,
           dataCompra: form.dataCompra || null,
           capaDura: form.capaDura,
-        }),
-      });
+        });
       setForm({ dataImpressao: "", dataCompra: "", capaDura: false });
       recarregar();
     } catch (err) {
@@ -60,7 +57,7 @@ export default function ExemplaresTable({ livroId, podeGerenciar }: Props) {
 
   async function mudarStatus(id: number, status: StatusExemplar) {
     try {
-      await api(`/exemplares/${id}/status?statusExemplar=${status}`, { method: "PATCH" });
+      await atualizarStatusExemplar(id, status);
       recarregar();
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao mudar o status");

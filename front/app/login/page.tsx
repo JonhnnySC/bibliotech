@@ -3,11 +3,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Livro from "../components/Livro";
-import { api } from "../lib/api";
-import type { LoginResponse } from "../types/auth";
+import { login } from "@/app/services/authService";
+import { salvarSessao } from "@/app/services/sessao";
+import { useAppDispatch } from "../store/hooks";
+import { sessaoIniciada } from "../store/authSlice";
 
 export default function Login() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -18,9 +21,9 @@ export default function Login() {
     setErro("");
     setCarregando(true);
     try {
-      const r = await api<LoginResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, senha }) });
-      localStorage.setItem("token", r.token);
-      localStorage.setItem("email", email);
+      const r = await login(email, senha);
+      salvarSessao(r.token, email, r.expiraEm);
+      dispatch(sessaoIniciada({ token: r.token, email }));
       router.push("/home");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao entrar");

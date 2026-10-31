@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Capa from "../../../components/Capa";
 import ExemplaresTable from "../components/ExemplaresTable";
-import { api } from "../../../lib/api";
-import type { Livro as LivroT, Usuario } from "../../../types/usuario";
+import { buscarLivro, excluirLivro } from "@/app/services/livroService";
+import { obterEmailLogado } from "@/app/services/sessao";
+import { listarUsuarios } from "@/app/services/usuarioService";
+import type { Livro as LivroT } from "../../../types/usuario";
 
 const anoLancamento = (iso?: string | null) => (iso ? iso.split("-")[0] : "");
 
@@ -22,7 +24,7 @@ export default function DetalheLivroPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<LivroT>(`/livros/${id}`)
+    buscarLivro(id)
       .then((d) => { if (vivo) setLivro(d); })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar o livro"); })
       .finally(() => { if (vivo) setCarregando(false); });
@@ -31,10 +33,10 @@ export default function DetalheLivroPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<Usuario[]>("/usuarios")
+    listarUsuarios()
       .then((us) => {
         if (!vivo) return;
-        const email = localStorage.getItem("email");
+        const email = obterEmailLogado();
         setSouAdmin(us.some((u) => u.email === email && String(u.perfil) === "ADMINISTRADOR"));
       })
       .catch(() => { /* sem permissão de listar -> só leitura */ });
@@ -45,7 +47,7 @@ export default function DetalheLivroPage() {
     if (!livro) return;
     if (!confirm(`Remover "${livro.volume}" do acervo?`)) return;
     try {
-      await api(`/livros/${livro.id}`, { method: "DELETE" });
+      await excluirLivro(livro.id);
       router.push("/livros");
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao remover o livro");

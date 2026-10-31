@@ -2,8 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "../../../lib/api";
-import type { Usuario } from "../../../types/usuario";
+import { criarUsuario } from "@/app/services/usuarioService";
 
 const campo = "mb-3 w-full rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]";
 
@@ -21,15 +20,12 @@ export default function NovoUsuarioPage() {
     setErro("");
     setSalvando(true);
     try {
-      await api<Usuario>("/usuarios", {
-        method: "POST",
-        body: JSON.stringify({
+      await criarUsuario({
           nome: form.nome,
           email: form.email,
           cpf: form.cpf,
           senha: form.senha,
-        }),
-      });
+        });
       router.push("/usuarios");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao cadastrar");

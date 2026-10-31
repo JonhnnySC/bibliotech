@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import LivroForm, { valoresDoLivro } from "../../components/LivroForm";
-import { api } from "../../../../lib/api";
+import { buscarLivro } from "@/app/services/livroService";
 import type { Livro as LivroT } from "../../../../types/usuario";
 
 export default function EditarLivroPage() {
@@ -17,7 +17,7 @@ export default function EditarLivroPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<LivroT>(`/livros/${id}`)
+    buscarLivro(id)
       .then((d) => { if (vivo) setLivro(d); })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar o livro"); })
       .finally(() => { if (vivo) setCarregando(false); });

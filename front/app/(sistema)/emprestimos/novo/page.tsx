@@ -2,7 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "../../../lib/api";
+import { listarLivros } from "@/app/services/livroService";
+import { listarExemplaresPorLivro } from "@/app/services/exemplarService";
+import { listarUsuarios } from "@/app/services/usuarioService";
+import { registrarEmprestimo } from "@/app/services/emprestimoService";
 import type { Exemplar, Livro as LivroT, Usuario } from "../../../types/usuario";
 
 const campo = "mb-3 w-full rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]";
@@ -26,7 +29,7 @@ export default function NovoEmprestimoPage() {
   // Popula os dois selects fixos (livros e leitores ativos)
   useEffect(() => {
     let vivo = true;
-    Promise.all([api<LivroT[]>("/livros"), api<Usuario[]>("/usuarios")])
+    Promise.all([listarLivros(), listarUsuarios()])
       .then(([ls, us]) => {
         if (!vivo) return;
         setLivros(ls);
@@ -42,7 +45,7 @@ export default function NovoEmprestimoPage() {
     if (!id) return;
     setCarregandoEx(true);
     try {
-      const todos = await api<Exemplar[]>(`/exemplares/livro/${id}`);
+      const todos = await listarExemplaresPorLivro(id);
       setDisponiveis(todos.filter((x) => x.statusExemplar === "DISPONIVEL"));
     } catch (e) {
       setErroForm(e instanceof Error ? e.message : "Erro ao buscar exemplares");
@@ -57,10 +60,7 @@ export default function NovoEmprestimoPage() {
     setErroForm("");
     setSalvando(true);
     try {
-      await api("/emprestimos", {
-        method: "POST",
-        body: JSON.stringify({ leitorId: Number(leitorId), exemplarId: Number(exemplarId) }),
-      });
+      await registrarEmprestimo({ leitorId: Number(leitorId), exemplarId: Number(exemplarId) });
       router.push("/emprestimos");
     } catch (err) {
       setErroForm(err instanceof Error ? err.message : "Falha ao registrar o empréstimo");

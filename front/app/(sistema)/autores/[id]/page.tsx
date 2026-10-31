@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { api } from "../../../lib/api";
+import { buscarAutor, excluirAutor } from "@/app/services/autorService";
 import type { Autor } from "../../../types/autor";
 
 export default function DetalheAutorPage() {
@@ -16,7 +16,7 @@ export default function DetalheAutorPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<Autor>(`/autores/${id}`)
+    buscarAutor(id)
       .then((d) => { if (vivo) setAutor(d); })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar autor"); })
       .finally(() => { if (vivo) setCarregando(false); });
@@ -26,7 +26,7 @@ export default function DetalheAutorPage() {
   async function excluir() {
     if (!autor || !confirm(`Remover "${autor.nome}" do acervo?`)) return;
     try {
-      await api(`/autores/${autor.id}`, { method: "DELETE" });
+      await excluirAutor(autor.id);
       router.push("/autores");
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao remover autor");

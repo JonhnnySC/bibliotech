@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "../../../lib/api";
+import { criarUsuario, atualizarUsuario } from "@/app/services/usuarioService";
 import { cpfValido } from "../../../lib/validacoes";
 import type { Usuario } from "../../../types/usuario";
 
@@ -41,13 +41,10 @@ export default function UsuarioForm({ modo, inicial, usuarioId }: Props) {
     try {
       if (modo === "criar") {
         // Nasce sempre LEITOR; promoção depois, pela tabela
-        await api<Usuario>("/usuarios", { method: "POST", body: JSON.stringify(f) });
+        await criarUsuario(f);
       } else {
         // Edição não mexe em senha/perfil (endpoints próprios)
-        await api<Usuario>(`/usuarios/${usuarioId}`, {
-          method: "PUT",
-          body: JSON.stringify({ nome: f.nome, email: f.email, cpf: f.cpf }),
-        });
+        await atualizarUsuario(usuarioId as number, { nome: f.nome, email: f.email, cpf: f.cpf });
       }
       router.push("/usuarios");
     } catch (err) {

@@ -2,7 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Capa from "../../components/Capa";
-import { api } from "../../lib/api";
+import { listarLivros } from "@/app/services/livroService";
+import { useAppSelector } from "../../store/hooks";
+import { listarUsuarios } from "@/app/services/usuarioService";
+import { listarEmprestimosAtivos, devolverEmprestimo } from "@/app/services/emprestimoService";
 import type { Emprestimo, Livro as LivroT, Usuario } from "../../types/usuario";
 
 // Formata data para DD/MM/AAAA — protege contra null/undefined
@@ -29,9 +32,9 @@ function diasRestantes(iso: string | null | undefined) {
 // helpers puros (fora do componente) -> não setam estado
 const buscarTudo = () =>
   Promise.all([
-    api<LivroT[]>("/livros"),
-    api<Usuario[]>("/usuarios"),
-    api<Emprestimo[]>("/emprestimos/ativos"),
+    listarLivros(),
+    listarUsuarios(),
+    listarEmprestimosAtivos(),
   ]);
 
 export default function Home() {
@@ -40,11 +43,10 @@ export default function Home() {
   const [ativos, setAtivos] = useState<Emprestimo[]>([]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
-  const [email, setEmail] = useState("");
+  const email = useAppSelector((estado) => estado.auth.email) ?? "";
 
   // fetch inicial no padrão sem setState síncrono no effect (callbacks .then)
   useEffect(() => {
-    setEmail(localStorage.getItem("email") ?? "");
     let vivo = true;
     buscarTudo()
       .then(([l, u, e]) => {
@@ -71,7 +73,7 @@ export default function Home() {
   async function devolver(id: number) {
     if (!confirm("Confirmar a devolução deste exemplar?")) return;
     try {
-      await api(`/emprestimos/${id}/devolver`, { method: "PATCH" });
+      await devolverEmprestimo(id);
       recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao devolver");

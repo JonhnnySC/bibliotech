@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "../../../lib/api";
+import { listarLivros } from "@/app/services/livroService";
+import { criarAutor, atualizarAutor } from "@/app/services/autorService";
 import type { Autor, AutorForm } from "../../../types/autor";
 import type { Livro } from "../../../types/usuario";
 
@@ -22,7 +23,7 @@ export default function AutorForm({ modo, inicial, autorId }: Props) {
 
   // Carregar lista de livros para o multi-select
   useEffect(() => {
-    api<Livro[]>("/livros")
+    listarLivros()
       .then(setLivros)
       .catch(() => setErro("Erro ao carregar livros"));
   }, []);
@@ -55,10 +56,10 @@ export default function AutorForm({ modo, inicial, autorId }: Props) {
       };
 
       if (modo === "criar") {
-        await api<Autor>("/autores", { method: "POST", body: JSON.stringify(corpo) });
+        await criarAutor(corpo);
         router.push("/autores");
       } else {
-        await api<Autor>(`/autores/${autorId}`, { method: "PUT", body: JSON.stringify(corpo) });
+        await atualizarAutor(autorId as number, corpo);
         router.push(`/autores/${autorId}`);
       }
     } catch (err) {

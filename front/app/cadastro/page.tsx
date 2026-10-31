@@ -3,8 +3,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Livro from "../components/Livro";
-import { api } from "../lib/api";
-import type { LoginResponse } from "../types/auth";
+import { login, registrar } from "@/app/services/authService";
+import { salvarSessao } from "@/app/services/sessao";
+import { useAppDispatch } from "../store/hooks";
+import { sessaoIniciada } from "../store/authSlice";
 
 const campo = "mb-4 w-full rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]";
 
@@ -24,6 +26,7 @@ function cpfValido(cpf: string): boolean {
 
 export default function Cadastro() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [f, setF] = useState({ nome: "", email: "", cpf: "", senha: "", confirmar: "" });
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -46,17 +49,11 @@ export default function Cadastro() {
     setCarregando(true);
     try {
       // 1) cria o usuário em /auth/registro (público; o back define perfil LEITOR e status ATIVO)
-      await api("/auth/registro", {
-        method: "POST",
-        body: JSON.stringify({ nome: f.nome, email, cpf, senha: f.senha }),
-      });
+      await registrar({ nome: f.nome, email, cpf, senha: f.senha });
       // 2) já faz o login para pegar o token
-      const r = await api<LoginResponse>("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, senha: f.senha }),
-      });
-      localStorage.setItem("token", r.token);
-      localStorage.setItem("email", email);
+      const r = await login(email, f.senha);
+      salvarSessao(r.token, email, r.expiraEm);
+      dispatch(sessaoIniciada({ token: r.token, email }));
       router.push("/home");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao cadastrar");

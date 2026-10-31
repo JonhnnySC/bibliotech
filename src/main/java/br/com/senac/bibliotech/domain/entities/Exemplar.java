@@ -1,6 +1,7 @@
 package br.com.senac.bibliotech.domain.entities;
 
 import br.com.senac.bibliotech.domain.enums.EnumStatusExemplar;
+import br.com.senac.bibliotech.domain.exception.ConflitoException;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,4 +37,16 @@ public class Exemplar {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private EnumStatusExemplar status = EnumStatusExemplar.DISPONIVEL;
+
+    // REGRA DE NEGÓCIO no domínio (Aula 15.10): o service só orquestra.
+    public void marcarComoEmprestado() {
+        if (this.status != EnumStatusExemplar.DISPONIVEL) {
+            throw new ConflitoException("Este exemplar não está disponível");
+        }
+        this.status = EnumStatusExemplar.EMPRESTADO;
+    }
+
+    public void marcarComoDisponivel() {
+        this.status = EnumStatusExemplar.DISPONIVEL;
+    }
 }

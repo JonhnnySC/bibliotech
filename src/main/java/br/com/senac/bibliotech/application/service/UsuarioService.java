@@ -2,6 +2,7 @@ package br.com.senac.bibliotech.application.service;
 
 import br.com.senac.bibliotech.application.dto.AlterarSenhaRequest;
 import br.com.senac.bibliotech.application.dto.AtualizarUsuarioRequest;
+import br.com.senac.bibliotech.application.dto.UsuarioLogado;
 import br.com.senac.bibliotech.application.dto.UsuarioRequest;
 import br.com.senac.bibliotech.application.dto.UsuarioResponse;
 import br.com.senac.bibliotech.domain.entities.Leitor;
@@ -10,10 +11,13 @@ import br.com.senac.bibliotech.domain.enums.EnumPerfil;
 import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
 import br.com.senac.bibliotech.domain.exception.ConflitoException;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
+import br.com.senac.bibliotech.domain.repository.BibliotecaRepository;
 import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
-import br.com.senac.bibliotech.infrastructure.security.TokenService;
+import br.com.senac.bibliotech.domain.valueobject.CPF;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +38,7 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final TokenService tokenService;
+    private final BibliotecaRepository bibliotecaRepository;
 
 
 
@@ -45,21 +49,22 @@ public class UsuarioService {
     private String senhaPromocao;
 
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, TokenService tokenService) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
+                          BibliotecaRepository bibliotecaRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
-        this.tokenService = tokenService;
+        this.bibliotecaRepository = bibliotecaRepository;
     }
 
     @Transactional
     public UsuarioResponse cadastrar(UsuarioRequest request) {
         String email = normalizar(request.email());
-        String cpf = request.cpf().replaceAll("\\D", "");   // só dígitos
+        CPF cpf = new CPF(request.cpf()); // lança "CPF Invalido!" se os dígitos não fecham
 
         if (usuarioRepository.existsByEmail(email)) {
             throw new ConflitoException("Já existe um usuário com este email");
         }
-        if (usuarioRepository.existsByCpf(cpf)) {
+        if (usuarioRepository.existsByCpf_Cpf(cpf.getCpf())) {
             throw new ConflitoException("Já existe um usuário com este CPF");
         }
 
@@ -67,19 +72,54 @@ public class UsuarioService {
                 .nome(request.nome())
                 .email(email)
                 .senha(passwordEncoder.encode(request.senha())) // grava o HASH, nunca a senha
-
+                .cpf(cpf)
                 .perfil(EnumPerfil.LEITOR)
                 .status(EnumStatusUsuario.ATIVO)
                 .build();
 
+        // Multibiblioteca: quem cadastra define a biblioteca (pelo token). No auto-cadastro
+        // (/auth/registro) não há ninguém logado, então fica sem biblioteca.
+        UsuarioLogado logado = usuarioLogadoOuNulo();
+        if (logado != null && logado.bibliotecaId() != null) {
+            leitor.setBiblioteca(bibliotecaRepository.getReferenceById(logado.bibliotecaId()));
+        }
+
         return UsuarioResponse.from(usuarioRepository.save(leitor));
+    }
+
+    /**
+     * Quem está logado, lido do SecurityContext (Aula 3). O front nunca informa quem
+     * está agindo: o JwtFilter já colocou o UsuarioLogado aqui a partir do token.
+     */
+    public UsuarioLogado getUsuarioLogado() {
+        UsuarioLogado logado = usuarioLogadoOuNulo();
+        if (logado == null) {
+            throw new IllegalStateException("Nenhum usuário logado");
+        }
+        return logado;
+    }
+
+    private UsuarioLogado usuarioLogadoOuNulo() {
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacao != null && autenticacao.getPrincipal() instanceof UsuarioLogado logado) {
+            return logado;
+        }
+        return null;
     }
 
     // Usuários EXCLUIDOS (soft delete) não aparecem na listagem.
     // DOWNSIDE: sem paginação. Com muitos usuários, troque por Page<UsuarioResponse>.
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listar() {
-        return usuarioRepository.findByStatusNot(EnumStatusUsuario.EXCLUIDO).stream()
+        UsuarioLogado logado = getUsuarioLogado();
+
+        // Sem biblioteca = vê todos. Com biblioteca = só os da própria biblioteca,
+        // e o id vem do token, nunca do front (Aula 3).
+        List<Usuario> usuarios = logado.bibliotecaId() == null
+                ? usuarioRepository.findByStatusNot(EnumStatusUsuario.EXCLUIDO)
+                : usuarioRepository.findByStatusNotAndBiblioteca_Id(EnumStatusUsuario.EXCLUIDO, logado.bibliotecaId());
+
+        return usuarios.stream()
                 .map(UsuarioResponse::from)
                 .toList();
     }
@@ -107,11 +147,11 @@ public class UsuarioService {
 
         // CPF: mesma regra do cadastrar (só dígitos + único). Vazio = mantém o atual.
         if (request.cpf() != null && !request.cpf().isBlank()) {
-            String cpf = request.cpf().replaceAll("\\D", "");
-            if (usuarioRepository.existsByCpfAndIdNot(cpf, id)) {
+            CPF cpf = new CPF(request.cpf());
+            if (usuarioRepository.existsByCpf_CpfAndIdNot(cpf.getCpf(), id)) {
                 throw new ConflitoException("Já existe um usuário com este CPF");
             }
-
+            usuario.setCpf(cpf);
         }
 
         return UsuarioResponse.from(usuario);
@@ -133,8 +173,8 @@ public class UsuarioService {
 
         Usuario usuario = buscarEntidade(id);
         usuario.setPerfil(perfil);
-        // LIMITAÇÃO: se o token do usuário já foi emitido, ele continua com o perfil
-        // antigo até expirar (o perfil vai dentro do JWT).
+        // O perfil é lido do banco a cada requisição (não vai dentro do JWT),
+        // então a mudança vale na próxima chamada do usuário.
         return UsuarioResponse.from(usuario);
     }
 

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Capa from "../../../components/Capa";
-import { api } from "../../../lib/api";
+import { criarLivro, atualizarLivro } from "@/app/services/livroService";
 import type { Livro as LivroT } from "../../../types/usuario";
 
 const campo = "mb-3 w-full rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]";
@@ -60,10 +60,10 @@ export default function LivroForm({ modo, inicial, livroId }: Props) {
     setSalvando(true);
     try {
       if (modo === "criar") {
-        await api<LivroT>("/livros", { method: "POST", body: JSON.stringify(corpo) });
+        await criarLivro(corpo);
         router.push("/livros");
       } else {
-        await api<LivroT>(`/livros/${livroId}`, { method: "PUT", body: JSON.stringify(corpo) });
+        await atualizarLivro(livroId as number, corpo);
         router.push(`/livros/${livroId}`);
       }
     } catch (err) {

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "../../lib/api";
+import { listarUsuarios, atualizarPerfilUsuario, atualizarStatusUsuario, excluirUsuario } from "@/app/services/usuarioService";
+import { obterEmailLogado } from "@/app/services/sessao";
 import type { Perfil, StatusUsuario, Usuario } from "../../types/usuario";
 
 /**
@@ -16,7 +17,7 @@ export default function UsuariosPage() {
 
   useEffect(() => {
     let vivo = true;
-    api<Usuario[]>("/usuarios")
+    listarUsuarios()
       .then((d) => { if (vivo) { setUsuarios(d.filter((u) => u.status !== "EXCLUIDO")); setErro(""); } })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar usuários"); })
       .finally(() => { if (vivo) setCarregando(false); });
@@ -25,7 +26,7 @@ export default function UsuariosPage() {
 
   async function recarregar() {
     try {
-      const d = await api<Usuario[]>("/usuarios");
+      const d = await listarUsuarios();
       setUsuarios(d.filter((u) => u.status !== "EXCLUIDO"));
       setErro("");
     } catch (e) {
@@ -36,7 +37,7 @@ export default function UsuariosPage() {
   }
 
   // Só ADMIN vê os seletores de promoção (compara com quem está logado)
-  const emailLogado = typeof window !== "undefined" ? localStorage.getItem("email") : null;
+  const emailLogado = obterEmailLogado();
   const souAdmin = usuarios.some((u) => u.email === emailLogado && String(u.perfil) === "ADMINISTRADOR");
 
   const filtrados = usuarios.filter((u) =>
@@ -47,7 +48,7 @@ export default function UsuariosPage() {
   /** Promover/rebaixar — endpoint exclusivo de ADMIN. */
   async function mudarPerfil(id: number, perfil: Perfil) {
     try {
-      await api(`/usuarios/${id}/perfil`, { method: "PATCH", body: JSON.stringify({ perfil }) });
+      await atualizarPerfilUsuario(id, perfil);
       recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao alterar perfil (apenas ADMIN pode)");
@@ -58,7 +59,7 @@ export default function UsuariosPage() {
   async function toggleStatus(id: number, atual: StatusUsuario) {
     const status = atual === "ATIVO" ? "BLOQUEADO" : "ATIVO";
     try {
-      await api(`/usuarios/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+      await atualizarStatusUsuario(id, status);
       recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao alterar status");
@@ -69,7 +70,7 @@ export default function UsuariosPage() {
   async function excluir(id: number) {
     if (!confirm("Excluir este usuário? (soft delete)")) return;
     try {
-      await api(`/usuarios/${id}`, { method: "DELETE" });
+      await excluirUsuario(id);
       recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao excluir usuário");
