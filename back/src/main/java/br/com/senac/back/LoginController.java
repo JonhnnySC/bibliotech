@@ -1,40 +1,47 @@
 package br.com.senac.back;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.TextField;
-import javafx.stage.Stage;
+import javafx.scene.control.PasswordField;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 public class LoginController {
 
-    private String key = "asiudhakjshdkjahsdk09oq";
+    @FXML
+    private PasswordField txtKey;
 
     @FXML
-    private TextField txtKey;
+    protected void onLoginButtonClick(ActionEvent event) throws IOException {
 
-    @FXML
-    protected void onLoginButtonClick(actionEvent event) throws IOException {
+        String esperada = Config.adminKey();
 
-        if (txtKey.getText().equals(key)) {
-            showMessage(Alert.AlertType.INFORMATION, "Login Efetuado com sucesso!");
+        if (esperada.isEmpty()) {
+            showMessage(Alert.AlertType.ERROR,
+                    "Defina a variável de ambiente BIBLIOTECH_ADMIN_KEY antes de abrir o app.");
+            return;
+        }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/br/com/senac/back/menu-view.fxml"));
-
-            Scene scene = new Scene(loader.load());
-            Stage stage = new Stage() ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(scene);
-
-        }else {
-            showMessage(Alert.AlertType.ERROR, "Erro ao Efetuar login!");
+        if (chaveConfere(txtKey.getText(), esperada)) {
+            Telas.trocar((Node) event.getSource(), Telas.MENU);
+        } else {
+            showMessage(Alert.AlertType.ERROR, "Chave inválida!");
         }
     }
-    private void showMessage(Alert.AlertType type, String msg){
-        Alert alerta =new Alert(type);
+
+    // Comparação em tempo constante (não vaza, pelo tempo de resposta, quantos caracteres bateram).
+    private boolean chaveConfere(String digitada, String esperada) {
+        byte[] a = digitada.getBytes(StandardCharsets.UTF_8);
+        byte[] b = esperada.getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(a, b);
+    }
+
+    private void showMessage(Alert.AlertType type, String msg) {
+        Alert alerta = new Alert(type);
         alerta.setTitle("Mensagem do Sistema!");
         alerta.setHeaderText(null);
         alerta.setContentText(msg);
