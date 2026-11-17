@@ -5,15 +5,16 @@ import java.time.Instant;
 
 /*
 rESPOSTA DO LOGIN
-
-"TIPO" = "BEARER" diaz ao cliente como eviar o token nas opróximas chamadas:
-    Authorizxation: Bearer <token>
-
-    "expiraEm" deixa o frontsaber quanto pedir um noovo login, sem precisar decodigficar o JWT
+    [
+    tipo = bearwer, isso dis ao client como enviar o token nas chasmadas
+    expira em deixa o feront saber quandfo pedir noovo login sem decodigfciar o jwt
+    usuario sao os dados publiocos que o redux vai guardar
  */
 public record LoginResponse(
         String token,
         String tipo,
-        Instant expiraEm
+        Instant expiraEm,
+        UsuarioLogadoResponse usuario
 ) {
 }
+

@@ -308,12 +308,12 @@ presentation ──► application ──► domain ◄── infra
 | `service/LivroService`, `AutorService` | `acervo/application/usecase/...` |
 | `service/EmprestimoService`, `ExemplarService` | `circulacao/application/usecase/...` |
 | `infrastructure.external`, pacote `user` (vazios) | apagar |
-| `arvore_front.txt`, `links_front.txt` | `docs/notas/` |
+| `../../arvore_front.txt`, `links_front.txt` | `docs/notas/` |
 
 ## 5. Ordem de migração (sem big-bang)
 
 1. **Bugs primeiro:** authorities no `JwtFilter`, campos duplicados em `Leitor`, DTO no `EmprestimoController`.
-2. **Higiene:** nomes, typo, pacotes vazios, profile `dev`, pom, mover notas para `docs/`.
+2. **Higiene:** nomes, typo, pacotes vazios, profile `dev`, pom, mover notas para `..`.
 3. **Migrations V8 e V9** (multa e versão; separar usuário e leitor).
 4. **`compartilhado`:** exceções base, handler, config global.
 5. **`circulacao`** (a mais rica): domínio puro + testes, depois persistência, use cases, controller. Remove o `EmprestimoService` e a entidade antigos.

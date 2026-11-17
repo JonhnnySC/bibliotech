@@ -13,10 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -45,6 +42,16 @@ public class AuthController {
     @PostMapping("/registro")
     public ResponseEntity<UsuarioResponse> registrar(@Valid @RequestBody UsuarioRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastrar(req));
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT) //hm
+            //oque é request header??????
+    public void logout(@RequestHeader("Authorization") String cabecalho) {
+        //oq é substriung?
+        authService.logout(cabecalho.substring("Bearer ".length())); // problema, se nao deixar espaço noo bearer, o findybytoken nao acha a linha por que bearewr sao 7 charachteres do jwtfdilter
+                                                                    //header malformado sem bnearwer cai como anônimo e o Security devolve 401 antes de chegar no controler.
+
     }
 
 

@@ -8,13 +8,18 @@ import br.com.senac.bibliotech.application.exception.CredenciaisInvalidasExcepti
 import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import br.com.senac.bibliotech.application.dto.UsuarioLogadoResponse;
 
 import java.util.Locale;
 
 /*
-  Orquestra o login: acha o usuário, confere a senha, gera o token.
- Cada peça tem seu dono: o repository busca, o PasswordEncoder compara,
-  o TokenService assina. O AuthService só coordena.
+
+fluxo:
+
+ orquestra do login -> acha o usuario -> confere a senha -> gera o token.
+ cada panela com sua tampa - o repository busca, o PasswordEncoder compara, o TokenService assina.
+
+  AuthService so coordena.
  */
 @Service
 public class AuthService {
@@ -35,30 +40,43 @@ public class AuthService {
         this.hashFalso = passwordEncoder.encode("senha-descartavel");
     }
 
-    // SEM @Transactional de propósito: o BCrypt leva ~100 ms e não usa o banco.
-    // Uma transação aqui seguraria uma conexão do pool à toa. O findByEmail já roda
-    // na sua própria transação curta, aberta pelo Spring Data.
+
+    /*
+    por que sem o transactional?
+
+    resposta = mema coisa, bcrypt lento, muito texto
+     */
     public LoginResponse login(LoginRequest request) {
-        // Normalizar (minúsculo, sem espaços) precisa ser IGUAL no cadastro e no login,
-        // senão "Ana@x.com" e "ana@x.com" viram duas pessoas diferentes.
+        // normalização pra nao dar probnlema
         String email = request.email().trim().toLowerCase(Locale.ROOT);
 
         Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
-        // Por que comparar com um hash falso quando o usuário não existe?
-        // O BCrypt é lento de propósito (~100 ms). Se pulássemos a comparação, "email
-        // inexistente" responderia bem mais rápido que "senha errada", e um atacante
-        // mediria o tempo para descobrir quais emails estão cadastrados (timing attack).
+        /*
+        pq comparar um hash falso cse o uisuario nao existir?
+        resposta = O bcryp é lento de proposito, se pulasse a comparation, ele respoonderia mais rapido
+        perigo de timing atack
+         */
         String hashParaComparar = (usuario != null) ? usuario.getSenha() : hashFalso;
         boolean senhaConfere = passwordEncoder.matches(request.senha(), hashParaComparar);
 
-        // Um único erro para os três casos: usuário inexistente, senha errada, inativo.
-        // ASSUMIDO: o enum tem a constante ATIVO. Ajuste ao seu EnumStatusUsuario.
+        /*
+        um erro só pra os casos de usuario, senha errada e inativo
+         */
         if (usuario == null || !senhaConfere || usuario.getStatus() != EnumStatusUsuario.ATIVO) {
             throw new CredenciaisInvalidasException();
         }
-
+         /*
+         mnenkadsnasnidjasjdnasndjasn
+          */
         TokenService.TokenGerado token = tokenService.gerar(usuario);
-        return new LoginResponse(token.valor(), "Bearer", token.expiraEm());
+        return new LoginResponse(token.valor(), "Bearer", token.expiraEm(), UsuarioLogadoResponse.from(usuario));
+    }
+
+    // novo metodo pra logout quanto o token fort revodgado, como fazer isso?
+        // r - colocar no authcontroller seu burro
+
+    public void logout(String token) {
+        tokenService.revogar(token);
     }
 }

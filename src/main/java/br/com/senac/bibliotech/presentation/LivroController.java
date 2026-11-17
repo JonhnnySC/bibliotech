@@ -3,6 +3,7 @@ package br.com.senac.bibliotech.presentation;
 import br.com.senac.bibliotech.application.dto.LivroRequest;
 import br.com.senac.bibliotech.application.dto.LivroResponse;
 import br.com.senac.bibliotech.application.service.LivroService;
+import br.com.senac.bibliotech.domain.enums.EnumGeneroLiterario;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -79,5 +80,12 @@ public class LivroController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         livroService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+    //novometodo gen adicionado,pra na oter confilitos com o get
+
+    @GetMapping("/generos")
+    @Operation(summary = "Listagem de gêneros literários", description = "Lista Fixa de enuns; exige token ")
+    public List<EnumGeneroLiterario> generos() {
+        return List.of(EnumGeneroLiterario.values());
     }
 }

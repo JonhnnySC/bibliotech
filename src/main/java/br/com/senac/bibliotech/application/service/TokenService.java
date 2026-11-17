@@ -86,4 +86,9 @@ public class TokenService {
 
         return new UsuarioLogado(usuario);
     }
+
+    @Transactional
+    public void revogar(String token) {
+        tokenRepository.findTokenByToken(token).ifPresent(tokenRepository::delete);
+    }
 }
