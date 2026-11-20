@@ -56,6 +56,7 @@ public class UsuarioService {
         this.bibliotecaRepository = bibliotecaRepository;
     }
 
+    // agora apenas pra registrar os nao admins
     @Transactional
     public UsuarioResponse cadastrar(UsuarioRequest request) {
         String email = normalizar(request.email());

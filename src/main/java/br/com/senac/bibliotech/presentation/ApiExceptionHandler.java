@@ -1,5 +1,6 @@
 package br.com.senac.bibliotech.presentation;
 
+import br.com.senac.bibliotech.application.exception.AcessoNegadoException;
 import br.com.senac.bibliotech.domain.exception.ConflitoException;
 import br.com.senac.bibliotech.application.exception.CredenciaisInvalidasException;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
@@ -59,5 +60,10 @@ public class ApiExceptionHandler {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Dados inválidos");
         problema.setProperty("campos", campos);
         return problema;
+    }
+
+    @ExceptionHandler(AcessoNegadoException.class)
+    public ProblemDetail acessoNegado(AcessoNegadoException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 }

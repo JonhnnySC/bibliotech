@@ -47,7 +47,7 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/swagger-ui/**", "/v3/api-docs/**",
                                 "/swagger-resources/**", "/webjars/**",
-                                "/auth/login", "/auth/registro", "/error"
+                                "/auth/login" /*"/auth/registro"*/, "/auth/bootstrap", "/error"
                         ).permitAll()
 
                         // Preflight do CORS (o navegador manda OPTIONS antes da request real)

@@ -1,10 +1,8 @@
 package br.com.senac.bibliotech.presentation;
 
-import br.com.senac.bibliotech.application.dto.LoginRequest;
-import br.com.senac.bibliotech.application.dto.LoginResponse;
-import br.com.senac.bibliotech.application.dto.UsuarioRequest;
-import br.com.senac.bibliotech.application.dto.UsuarioResponse;
+import br.com.senac.bibliotech.application.dto.*;
 import br.com.senac.bibliotech.application.service.AuthService;
+import br.com.senac.bibliotech.application.service.BootstrapService;
 import br.com.senac.bibliotech.application.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,10 +20,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final UsuarioService usuarioService;
+    private final BootstrapService bootstrapService;
 
-    public AuthController(AuthService authService, UsuarioService usuarioService) {
+    public AuthController(AuthService authService, UsuarioService usuarioService, BootstrapService bootstrapService) {
         this.authService = authService;
         this.usuarioService = usuarioService;
+        this.bootstrapService = bootstrapService;
     }
 
 
@@ -39,11 +39,6 @@ public class AuthController {
         return authService.login(request);
     }
 
-    @PostMapping("/registro")
-    public ResponseEntity<UsuarioResponse> registrar(@Valid @RequestBody UsuarioRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastrar(req));
-    }
-
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT) //hm
             //oque é request header??????
@@ -52,6 +47,15 @@ public class AuthController {
         authService.logout(cabecalho.substring("Bearer ".length())); // problema, se nao deixar espaço noo bearer, o findybytoken nao acha a linha por que bearewr sao 7 charachteres do jwtfdilter
                                                                     //header malformado sem bnearwer cai como anônimo e o Security devolve 401 antes de chegar no controler.
 
+    }
+    // adiioibnar boothservice pra ser redundante
+
+    @PostMapping("/bootstrap")
+    @ResponseStatus(HttpStatus.CREATED)
+    public BootstrapResponse bootstrap(
+            @RequestHeader(value = "X-Bootstrap-Key", required = false) String chave,
+            @Valid @RequestBody BootstrapRequest request) {
+        return bootstrapService.provisionar(chave, request);
     }
 
 

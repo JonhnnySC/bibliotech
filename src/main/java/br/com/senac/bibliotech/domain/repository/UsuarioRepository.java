@@ -7,13 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Cada método é uma "derived query": o Spring lê o NOME e gera o SQL.
- * Se o nome citar uma propriedade que não existe em Usuario, a app nem sobe
- * (falha rápida, o que é bom).
- *
- * REMOVIDO: existsUsuarioByEmailAndSenha. Comparar senha dentro do SQL não funciona
- * com BCrypt (cada hash tem um salt diferente) e incentivava guardar senha em texto puro.
+/*
+ Cada metodo é uma "derived query": o Spring lê o NOME e gera o SQL.
+  Se o nome citar uma propriedade que não existe em Usuario, a app nem sobe
+ (falha rápida, o que é bom).
+
+  REMOVIDO: existsUsuarioByEmailAndSenha. Comparar senha dentro do SQL não funciona
+  com BCrypt (cada hash tem um salt diferente) e incentivava guardar senha em texto puro.
  */
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
