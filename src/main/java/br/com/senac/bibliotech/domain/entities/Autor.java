@@ -34,4 +34,10 @@ public class Autor {
     )
     @Builder.Default
     private List<Livro> livros = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "biblioteca_id", nullable = false, updatable = false)
+    private Biblioteca biblioteca;
+
+
 }

@@ -108,19 +108,15 @@ public class UsuarioService {
         return null;
     }
 
-    // Usuários EXCLUIDOS (soft delete) não aparecem na listagem.
-    // DOWNSIDE: sem paginação. Com muitos usuários, troque por Page<UsuarioResponse>.
+    // Users excluidos n aparecem na listagem.
+    //Com muitos usuários, troque por Page<UsuarioResponse>.
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listar() {
-        UsuarioLogado logado = getUsuarioLogado();
 
-        // Sem biblioteca = vê todos. Com biblioteca = só os da própria biblioteca,
-        // e o id vem do token, nunca do front (Aula 3).
-        List<Usuario> usuarios = logado.bibliotecaId() == null
-                ? usuarioRepository.findByStatusNot(EnumStatusUsuario.EXCLUIDO)
-                : usuarioRepository.findByStatusNotAndBiblioteca_Id(EnumStatusUsuario.EXCLUIDO, logado.bibliotecaId());
+        Long bibliotecaId = getUsuarioLogado().bibliotecaId();
 
-        return usuarios.stream()
+        return usuarioRepository.findByStatusNotAndBiblioteca_Id(EnumStatusUsuario.EXCLUIDO
+        , bibliotecaId).stream()
                 .map(UsuarioResponse::from)
                 .toList();
     }

@@ -29,6 +29,15 @@ public class Livro {
     @Column(name = "capa_url", length = 500)
     private String capaUrl;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "biblioteca_id", nullable = false, updatable = false)
+    private Biblioteca biblioteca;
+
+    /** Updateble false impede mudar de biblioteca depois de criado, nenhum dto de req ganha nbiblioteccva id pror segurança
+     * lazy nao carrgea a biblioteca inteira toda vez que carregar o livro
+     * optional false e nullable false diz que oo dono é obrigatoriao
+     */
+
 
     // private boolean capaDura; //capa dura ou mole? // - migrar pra entidade exemplar
 

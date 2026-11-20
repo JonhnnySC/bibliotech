@@ -41,9 +41,9 @@ public class AuthController {
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT) //hm
-            //oque é request header??????
+            //oque é request header?????? r - le um cabecalho http da req, o xboottrapkey é o que o desktopmanda no  header. com required false, a fatoda do header vira null e cai no 4-3 enves do 40 altiomatico
     public void logout(@RequestHeader("Authorization") String cabecalho) {
-        //oq é substriung?
+        //oq é substriung? r - vearer tem 7 chars, contando o espaço, o subtring descarta o prefixo e deixa so o token
         authService.logout(cabecalho.substring("Bearer ".length())); // problema, se nao deixar espaço noo bearer, o findybytoken nao acha a linha por que bearewr sao 7 charachteres do jwtfdilter
                                                                     //header malformado sem bnearwer cai como anônimo e o Security devolve 401 antes de chegar no controler.
 

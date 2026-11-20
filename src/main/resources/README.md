@@ -1,4 +1,5 @@
-# BiblioTech
+#magonegro@JonhnnyPC:~/dev/projects/java/bibliotech$ git mv back admin-desktop
+fatal: bad source, source=back, destination=admin-desktop/back BiblioTech
 
 ## Como subir do zero?
 1. `cp .env.example .env` preencha (JWT_SECRET com 32+ caracteres; BOOTSTRAP_KEY: `openssl rand -hex 32`)

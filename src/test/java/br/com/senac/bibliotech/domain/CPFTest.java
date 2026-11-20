@@ -1,6 +1,6 @@
 package br.com.senac.bibliotech.domain;
 
-import br.com.senac.bibliotech.domain.valueobject.CPF;
+import br.com.senac.bibliotech.domain.valueObject.CPF;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

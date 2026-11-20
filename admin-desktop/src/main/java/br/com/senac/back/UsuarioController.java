@@ -16,71 +16,78 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UsuarioController {
 
-    /*
-     * ATENÇÃO: esta rota NÃO existe no back atual. O back tem POST /usuarios
-     * (exige token de ADMINISTRADOR) e POST /auth/registro. Enquanto a decisão de como
-     * criar o primeiro admin (banco vazio) não for tomada, é só aqui que a rota muda.
-     */
-    private static final String PATH_CADASTRO_ADMIN = "/usuarios/admin";
+    private static final String PATH_BOOTSTRAP = "/auth/bootstrap";
+    private static final Pattern DETAIL =
+            Pattern.compile("\"detail\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
 
     private static final HttpClient HTTP = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
-    @FXML
-    private TextField txtNome;
-
-    @FXML
-    private TextField txtCpf;
-
-    @FXML
-    private TextField txtEmail;
-
-    @FXML
-    private PasswordField txtSenha;
-
-    @FXML
-    private Button btnSalvar;
+    @FXML private TextField txtEmpresaNome;
+    @FXML private TextField txtCnpj;
+    @FXML private TextField txtNome;
+    @FXML private TextField txtEmail;
+    @FXML private TextField txtCpf;
+    @FXML private PasswordField txtSenha;
+    @FXML private Button btnSalvar;
 
     @FXML
     public void salvarUsuario(ActionEvent event) {
 
+        String empresaNome = txtEmpresaNome.getText().trim();
+        String cnpj = txtCnpj.getText().replaceAll("\\D", ""); // só dígitos
         String nome = txtNome.getText().trim();
         String email = txtEmail.getText().trim();
+        String cpf = txtCpf.getText().replaceAll("\\D", "");
         String senha = txtSenha.getText();
-        String cpf = txtCpf.getText().replaceAll("\\D", ""); // só dígitos, como a API exige
 
-        // Mesmas regras do UsuarioRequest do back
+        if (empresaNome.isEmpty()) {
+            showMessage(Alert.AlertType.WARNING, "Informe o nome da empresa.");
+            return;
+        }
+        if (cnpj.length() != 14) {
+            showMessage(Alert.AlertType.WARNING, "O CNPJ deve ter 14 dígitos.");
+            return;
+        }
         if (nome.isEmpty()) {
-            showMessage(Alert.AlertType.WARNING, "Informe o nome.");
+            showMessage(Alert.AlertType.WARNING, "Informe o nome do administrador.");
             return;
         }
         if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
             showMessage(Alert.AlertType.WARNING, "E-mail inválido.");
             return;
         }
-        if (senha.length() < 8 || senha.length() > 72) {
-            showMessage(Alert.AlertType.WARNING, "A senha deve ter entre 8 e 72 caracteres.");
-            return;
-        }
         if (cpf.length() != 11) {
             showMessage(Alert.AlertType.WARNING, "O CPF deve ter 11 dígitos.");
             return;
         }
+        if (senha.length() < 8 || senha.length() > 72) {
+            showMessage(Alert.AlertType.WARNING, "A senha deve ter entre 8 e 72 caracteres.");
+            return;
+        }
 
-        String json = montarJson(nome, email, senha, cpf);
-        Node origem = (Node) event.getSource();
+        String json = "{"
+                + "\"empresaNome\":" + aspas(empresaNome) + ","
+                + "\"empresaCnpj\":" + aspas(cnpj) + ","
+                + "\"adminNome\":" + aspas(nome) + ","
+                + "\"adminEmail\":" + aspas(email) + ","
+                + "\"adminCpf\":" + aspas(cpf) + ","
+                + "\"adminSenha\":" + aspas(senha) + "}";
 
         // Chamada de rede fora da thread da interface, senão a janela congela.
         Task<HttpResponse<String>> tarefa = new Task<>() {
             @Override
             protected HttpResponse<String> call() throws Exception {
-                HttpRequest request = HttpRequest.newBuilder(URI.create(Config.apiUrl() + PATH_CADASTRO_ADMIN))
+                HttpRequest request = HttpRequest.newBuilder(URI.create(Config.apiUrl() + PATH_BOOTSTRAP))
                         .timeout(Duration.ofSeconds(10))
                         .header("Content-Type", "application/json; charset=UTF-8")
+                        .header("X-Bootstrap-Key", Sessao.chave())
                         .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
                         .build();
                 return HTTP.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -94,24 +101,24 @@ public class UsuarioController {
             HttpResponse<String> resposta = tarefa.getValue();
             int status = resposta.statusCode();
 
-            if (status >= 200 && status < 300) { // aceita 200 e 201
-                showMessage(Alert.AlertType.INFORMATION, "Usuário salvo com sucesso!");
-                try {
-                    Telas.trocar(origem, Telas.MENU);
-                } catch (IOException ex) {
-                    showMessage(Alert.AlertType.ERROR, "Não foi possível voltar ao menu: " + ex.getMessage());
-                }
+            if (status == 201) {
+                showMessage(Alert.AlertType.INFORMATION,
+                        "Biblioteca " + empresaNome + " criada com o administrador " + nome + ".");
+                limparFormulario(); // pronto para criar a 2ª empresa sem reabrir o app
+            } else if (status == 403) {
+                showMessage(Alert.AlertType.ERROR, "Chave inválida.");
+            } else if (status == 409 || status == 400) {
+                showMessage(Alert.AlertType.ERROR, detalhe(resposta.body()));
             } else {
                 showMessage(Alert.AlertType.ERROR,
-                        "Erro ao salvar usuário (HTTP " + status + ").\n" + resumo(resposta.body()));
+                        "Erro inesperado (HTTP " + status + ").\n" + detalhe(resposta.body()));
             }
         });
 
         tarefa.setOnFailed(e -> {
             btnSalvar.setDisable(false);
             showMessage(Alert.AlertType.ERROR,
-                    "Não foi possível falar com a API em " + Config.apiUrl() + "\n"
-                            + tarefa.getException().getMessage());
+                    "Não foi possível falar com a API em " + Config.apiUrl());
         });
 
         Thread thread = new Thread(tarefa, "chamada-api");
@@ -121,22 +128,28 @@ public class UsuarioController {
 
     @FXML
     public void voltar(ActionEvent event) throws IOException {
-        Telas.trocar((Node) event.getSource(), Telas.MENU);
+        Telas.trocar((Node) event.getSource(), Telas.LOGIN);
     }
 
-    private String montarJson(String nome, String email, String senha, String cpf) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{")
-                .append("\"nome\":").append(aspas(nome)).append(",")
-                .append("\"email\":").append(aspas(email)).append(",")
-                .append("\"senha\":").append(aspas(senha)).append(",")
-                .append("\"cpf\":").append(aspas(cpf));
+    private void limparFormulario() {
+        txtEmpresaNome.clear();
+        txtCnpj.clear();
+        txtNome.clear();
+        txtEmail.clear();
+        txtCpf.clear();
+        txtSenha.clear();
+    }
 
-        String chave = Config.bootstrapKey();
-        if (!chave.isEmpty()) {
-            sb.append(",\"secretKey\":").append(aspas(chave));
+    // Tira o campo "detail" do JSON de erro da API; se não achar, devolve um resumo do corpo.
+    private String detalhe(String corpo) {
+        if (corpo == null || corpo.isBlank()) {
+            return "Sem detalhes da API.";
         }
-        return sb.append("}").toString();
+        Matcher m = DETAIL.matcher(corpo);
+        if (m.find()) {
+            return m.group(1).replace("\\\"", "\"").replace("\\n", "\n").replace("\\\\", "\\");
+        }
+        return corpo.length() > 300 ? corpo.substring(0, 300) + "..." : corpo;
     }
 
     // Escapa o texto para JSON (aspas, barra invertida e caracteres de controle).
@@ -159,13 +172,6 @@ public class UsuarioController {
             }
         }
         return sb.append("\"").toString();
-    }
-
-    private String resumo(String corpo) {
-        if (corpo == null || corpo.isBlank()) {
-            return "";
-        }
-        return corpo.length() > 300 ? corpo.substring(0, 300) + "..." : corpo;
     }
 
     private void showMessage(Alert.AlertType type, String msg) {

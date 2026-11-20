@@ -67,4 +67,8 @@ public class Emprestimo {
         this.dataDevolucao = LocalDate.now();
         this.exemplar.marcarComoDisponivel();
     }
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "biblioteca_id", nullable = false, updatable = false)
+    private Biblioteca biblioteca;
 }

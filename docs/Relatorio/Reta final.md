@@ -10,4 +10,8 @@ fase 1: base do back
 
 fase 2: 
 
+fase 4: Multilocacao
+
+toda entidade de negocio tem dono 'biblioteca id' e o back descobre o dono pelo token nuca pelo body da  requesicao, nao existe mais admin global
+
 
