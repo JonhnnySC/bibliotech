@@ -1,47 +1,178 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import UsuarioForm, { valoresDoUsuario } from "../components/UsuarioForm";
-import { listarUsuarios } from "@/app/services/usuarioService";
-import type { Usuario } from "../../../types/usuario";
+import { listarUsuarios, atualizarPerfilUsuario, atualizarStatusUsuario, excluirUsuario } from "@/app/services/usuarioService";
+// ✅ NOVO: lê o usuário logado direto da store (Redux). Substitui o obterEmailLogado().
+import { useAppSelector } from "@/app/store/hooks";
+import type { Perfil, StatusUsuario, Usuario } from "../../../types/usuario";
 
-/** Rota /usuarios/[id]/editar — hidrata o form compartilhado com o usuário atual. */
-export default function EditarUsuarioPage() {
-  const params = useParams();
-  const raw = params?.id;
-  const id = Number(Array.isArray(raw) ? raw[0] : raw);
-
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+/**
+ * Rota /usuarios — lista + ações de gestão (perfil, status, exclusão).
+ * Criação em /usuarios/novo; edição em /usuarios/[id]/editar.
+ */
+export default function UsuariosPage() {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [busca, setBusca] = useState("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
 
-    useEffect(() => {
-    let vivo = true;
-    // Lista e pega o usuário pelo id (backend não expõe GET por id público aqui)
-    listarUsuarios()
-        .then((d: Usuario[]) => {                       // ← tipo explícito mata o TS7006
-        if (vivo) setUsuario(d.find((u) => u.id === id) ?? null);
-        })
-        .catch((e: unknown) => {                          // ← idem
-        if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar usuário");
-        })
-        .finally(() => { if (vivo) setCarregando(false); });
-    return () => { vivo = false; };
-    }, [id]);
+  // ✅ NOVO: quem está logado vem da store.
+  // Por que o selector devolve só `s.auth.usuario` (e não o state inteiro)?
+  // Porque o componente só re-renderiza quando ESSE pedaço muda. Se você
+  // retornasse o state todo, qualquer mudança em qualquer slice re-renderizaria a página.
+  const usuarioLogado = useAppSelector((s) => s.auth.usuario);
 
-  if (carregando) return <p className="text-lg">Consultando os registros...</p>;
-  if (erro || !usuario) {
-    return <p className="rounded border border-red-400/60 bg-red-950/40 p-3 text-red-300">{erro || "Usuário não encontrado."}</p>;
+  // ✅ NOVO: souAdmin agora é um valor DERIVADO (calculado a cada render), não um state.
+  // Antes: era preciso carregar a lista inteira de usuários, achar o logado pelo
+  // e-mail e olhar o perfil dele. Isso gerava "piscada" (false -> true) e acoplava
+  // a permissão ao carregamento da lista. Agora o perfil já está na store desde o login.
+  // String(...) é só uma proteção caso o tipo do perfil na store seja mais amplo que o enum.
+  // ⚠️ Downside: isso é controle de UI. A segurança de verdade tem que estar no backend
+  // (o endpoint de perfil já é exclusivo de ADMIN, então está ok).
+  const souAdmin = String(usuarioLogado?.perfil) === "ADMINISTRADOR";
+
+  useEffect(() => {
+    // Flag "vivo": evita setState se o componente desmontar antes da resposta chegar.
+    let vivo = true;
+    listarUsuarios()
+      .then((d) => { if (vivo) { setUsuarios(d.filter((u) => u.status !== "EXCLUIDO")); setErro(""); } })
+      .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar usuários"); })
+      .finally(() => { if (vivo) setCarregando(false); });
+    return () => { vivo = false; };
+  }, []);
+
+  async function recarregar() {
+    try {
+      const d = await listarUsuarios();
+      setUsuarios(d.filter((u) => u.status !== "EXCLUIDO"));
+      setErro("");
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao carregar usuários");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  // (removido) const emailLogado = obterEmailLogado();
+  // (removido) o antigo `souAdmin = usuarios.some(...)` — agora vem da store, ali em cima.
+
+  const filtrados = usuarios.filter((u) =>
+    u.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    u.email.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  /** Promover/rebaixar — endpoint exclusivo de ADMIN. */
+  async function mudarPerfil(id: number, perfil: Perfil) {
+    try {
+      await atualizarPerfilUsuario(id, perfil);
+      recarregar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao alterar perfil (apenas ADMIN pode)");
+    }
+  }
+
+  /** Bloquear/ativar — ADMIN. */
+  async function toggleStatus(id: number, atual: StatusUsuario) {
+    const status = atual === "ATIVO" ? "BLOQUEADO" : "ATIVO";
+    try {
+      await atualizarStatusUsuario(id, status);
+      recarregar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao alterar status");
+    }
+  }
+
+  /** Soft delete. */
+  async function excluir(id: number) {
+    if (!confirm("Excluir este usuário? (soft delete)")) return;
+    try {
+      await excluirUsuario(id);
+      recarregar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao excluir usuário");
+    }
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <nav className="mb-4 text-sm text-ouro/70">
-        <Link href="/usuarios" className="hover:text-verde-neon">← Voltar aos usuários</Link>
-      </nav>
-      <h1 className="font-gotica mb-6 text-4xl neon-ouro">Editando: {usuario.nome}</h1>
-      <UsuarioForm modo="editar" inicial={valoresDoUsuario(usuario)} usuarioId={usuario.id} />
+    <div className="mx-auto max-w-6xl">
+      <section className="borda-neon mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-marrom/70 p-6">
+        <div>
+          <h1 className="font-gotica text-4xl neon-ouro sm:text-5xl">Usuários</h1>
+          <p className="mt-1 text-lg italic text-verde-neon/90">
+            {carregando ? "Consultando os registros..." : `${filtrados.length} usuário(s).`}
+          </p>
+        </div>
+        <Link href="/usuarios/novo" className="btn-neon font-gotica rounded-full px-5 py-2 text-xl">
+          Novo usuário
+        </Link>
+      </section>
+
+      {erro && <p className="mb-4 rounded border border-red-400/60 bg-red-950/40 p-3 text-red-300">{erro}</p>}
+
+      <input
+        value={busca} onChange={(e) => setBusca(e.target.value)}
+        placeholder="Buscar por nome ou e-mail"
+        className="mb-6 w-full max-w-md rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]"
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-ouro bg-marrom/60">
+        <table className="w-full text-left">
+          <thead className="bg-musgo text-ouro-neon">
+            <tr>
+              <th className="p-3">Nome</th><th className="p-3">E-mail</th>
+              <th className="p-3">Perfil</th><th className="p-3">Status</th><th className="p-3 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!carregando && filtrados.length === 0 && (
+              <tr><td colSpan={5} className="p-6 text-center text-lg">Nenhum usuário encontrado.</td></tr>
+            )}
+            {filtrados.map((u) => (
+              <tr key={u.id} className="border-t border-marrom-claro hover:bg-noite/30 transition-colors">
+                <td className="p-3 font-medium">{u.nome}</td>
+                <td className="p-3 text-ouro/80">{u.email}</td>
+                <td className="p-3">
+                  {souAdmin ? (
+                    <select value={u.perfil} onChange={(e) => mudarPerfil(u.id, e.target.value as Perfil)}
+                      aria-label={`Perfil de ${u.nome}`}
+                      className="rounded border border-ouro bg-noite/80 px-2 py-1 text-xs text-ouro-neon">
+                      <option value="LEITOR">LEITOR</option>
+                      <option value="BIBLIOTECARIO">BIBLIOTECARIO</option>
+                      <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                    </select>
+                  ) : (
+                    <span className={`rounded px-2 py-1 text-xs font-bold ${
+                      u.perfil === "ADMINISTRADOR" ? "bg-red-900/50 text-red-300" :
+                      u.perfil === "BIBLIOTECARIO" ? "bg-amber-900/50 text-amber-300" :
+                      "bg-verde-neon/20 text-verde-neon"}`}>{u.perfil}</span>
+                  )}
+                </td>
+                <td className="p-3">
+                  <span className={`rounded px-2 py-1 text-xs font-bold ${u.status === "ATIVO" ? "bg-verde-neon/20 text-verde-neon" : "bg-red-900/50 text-red-300"}`}>
+                    {u.status}
+                  </span>
+                </td>
+                <td className="p-3 text-right">
+                  <div className="flex justify-end gap-2">
+                    <Link href={`/usuarios/${u.id}/editar`}
+                      className="rounded border border-verde-neon px-3 py-1 text-sm text-verde-neon hover:bg-verde-neon hover:text-noite">
+                      Editar
+                    </Link>
+                    <button onClick={() => toggleStatus(u.id, u.status)}
+                      className="rounded border border-ouro px-3 py-1 text-sm text-ouro-neon hover:bg-ouro hover:text-noite">
+                      {u.status === "ATIVO" ? "Bloquear" : "Ativar"}
+                    </button>
+                    <button onClick={() => excluir(u.id)}
+                      className="rounded border border-red-400 px-3 py-1 text-sm text-red-300 hover:bg-red-950/50">
+                      Excluir
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

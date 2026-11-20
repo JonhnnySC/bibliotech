@@ -1,23 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
-import { lerSessao } from "@/app/services/sessao";
+import TelaLogin from "../components/TelaLogin";
+import { useAppSelector } from "../store/hooks";
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const [aberta, setAberta] = useState(true);
-  const [pronto, setPronto] = useState(false);
+  const token = useAppSelector((s) => s.auth.token);
+  const [aberta, setAberta] = useState(true); // hooks antesdo return condiciona
 
-  // sem token → volta para o login
-  useEffect(() => {
-    if (!lerSessao().token) router.replace("/login");
-    else setPronto(true);
-  }, [router]);
-
-  if (!pronto) return null;
+  if (!token) return <TelaLogin />;
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { listarUsuarios, buscarUsuario, atualizarUsuario, atualizarPerfilUsuario } from "@/app/services/usuarioService";
-import { obterEmailLogado } from "@/app/services/sessao";
+// ✅ listarUsuarios saiu do import: só servia para descobrir se o logado era ADMIN.
+import { buscarUsuario, atualizarUsuario, atualizarPerfilUsuario } from "@/app/services/usuarioService";
+// ✅ NOVO: no lugar do obterEmailLogado()
+import { useAppSelector } from "@/app/store/hooks";
 import type { Perfil, Usuario } from "../../../../types/usuario";
 
 const campo = "mb-3 w-full rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]";
@@ -13,30 +15,35 @@ export default function EditarUsuarioPage() {
   const router = useRouter();
   const id = Number(params?.id);
 
+  // `usuario` (state) = o usuário que está SENDO EDITADO.
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [form, setForm] = useState({ nome: "", email: "", cpf: "" });
   const [perfil, setPerfil] = useState<Perfil>("LEITOR");
-  const [souAdmin, setSouAdmin] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
+  // ✅ NOVO: o usuário LOGADO, vindo da store.
+  // ⚠️ Repare que NÃO usei o nome `usuario` (como no exemplo do passo 10.1):
+  // aqui ele já existe como state do usuário editado, então daria conflito e,
+  // pior, confusão de leitura (quem é quem?). `usuarioLogado` deixa explícito.
+  const usuarioLogado = useAppSelector((s) => s.auth.usuario);
+
+  // ✅ NOVO: derivado, sem useState/useEffect. Menos estado = menos bug de sincronização.
+  // (Antes: Promise.all com listarUsuarios() só para calcular isso — uma requisição
+  // extra a cada abertura da tela, e um usuário não-admin talvez nem tivesse permissão de listar.)
+  const souAdmin = String(usuarioLogado?.perfil) === "ADMINISTRADOR";
+
   useEffect(() => {
     let vivo = true;
-    const emailLogado = obterEmailLogado();
 
-    Promise.all([
-      buscarUsuario(id),
-      listarUsuarios(),
-    ])
-      .then(([u, todos]) => {
+    // Agora só precisamos buscar o usuário a ser editado. Sem Promise.all.
+    buscarUsuario(id)
+      .then((u) => {
         if (!vivo) return;
         setUsuario(u);
         setForm({ nome: u.nome ?? "", email: u.email ?? "", cpf: u.cpf ?? "" });
         setPerfil(u.perfil);
-        setSouAdmin(
-          todos.some((x) => x.email === emailLogado && String(x.perfil) === "ADMINISTRADOR")
-        );
       })
       .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar usuário"); })
       .finally(() => { if (vivo) setCarregando(false); });
@@ -56,6 +63,8 @@ export default function EditarUsuarioPage() {
       await atualizarUsuario(id, { nome: form.nome, email: form.email, cpf: form.cpf });
 
       // 2) perfil (só se for ADMIN e se mudou) — endpoint exclusivo de ADMIN
+      // O backend continua sendo a barreira real; o `souAdmin` aqui só evita
+      // mandar uma requisição que já sabemos que seria negada.
       if (souAdmin && usuario && perfil !== usuario.perfil) {
         await atualizarPerfilUsuario(id, perfil);
       }

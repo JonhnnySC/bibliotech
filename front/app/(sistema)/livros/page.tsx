@@ -1,74 +1,99 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import Capa from "../../components/Capa";
-import { listarLivros } from "@/app/services/livroService";
+import ExemplaresTable from "../livros/components/ExemplaresTable";
+import { buscarLivro, excluirLivro } from "@/app/services/livroService";
+// ✅ NOVO: no lugar de obterEmailLogado + listarUsuarios (os dois saíram do import)
+import { useAppSelector } from "@/app/store/hooks";
 import type { Livro as LivroT } from "../../types/usuario";
 
 const anoLancamento = (iso?: string | null) => (iso ? iso.split("-")[0] : "");
 
-export default function LivrosPage() {
-  const [livros, setLivros] = useState<LivroT[]>([]);
-  const [busca, setBusca] = useState("");
+export default function DetalheLivroPage() {
+  const params = useParams();
+  const router = useRouter();
+  const raw = params?.id;
+  const id = Number(Array.isArray(raw) ? raw[0] : raw);
+
+  const [livro, setLivro] = useState<LivroT | null>(null);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
 
+  // ✅ NOVO: perfil direto da store.
+  // 📌 Regra dos Hooks: useAppSelector é um hook, então TEM que ficar aqui em cima,
+  // antes dos `return` condicionais lá embaixo (carregando / erro). Hook depois de
+  // um return antecipado quebra a ordem de chamada entre renders e o React reclama.
+  const usuarioLogado = useAppSelector((s) => s.auth.usuario);
+
+  // ✅ Derivado: substitui o useState(souAdmin) + o segundo useEffect inteiro.
+  // Ganhos: uma requisição a menos (listarUsuarios), sem "piscar" os botões
+  // Editar/Remover depois do carregamento, e sem o catch que engolia erro.
+  // ⚠️ Downside: continua sendo só UX. Quem barra de verdade é o backend.
+  const souAdmin = String(usuarioLogado?.perfil) === "ADMINISTRADOR";
+
   useEffect(() => {
     let vivo = true;
-    listarLivros()
-      .then((d) => { if (vivo) { setLivros(d); setErro(""); } })
-      .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar os livros"); })
+    buscarLivro(id)
+      .then((d) => { if (vivo) setLivro(d); })
+      .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar o livro"); })
       .finally(() => { if (vivo) setCarregando(false); });
     return () => { vivo = false; };
-  }, []);
+  }, [id]);
 
-  const filtrados = livros.filter((l) => {
-    const q = busca.trim().toLowerCase();
-    if (!q) return true;
-    return l.volume.toLowerCase().includes(q) || l.isbn?.toLowerCase().includes(q);
-  });
+  async function excluir() {
+    if (!livro) return;
+    if (!confirm(`Remover "${livro.volume}" do acervo?`)) return;
+    try {
+      await excluirLivro(livro.id);
+      router.push("/livros");
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao remover o livro");
+    }
+  }
+
+  if (carregando) return <p className="text-lg">Abrindo o grimório...</p>;
+  if (erro || !livro) return <p className="rounded border border-red-400/60 bg-red-950/40 p-3 text-red-300">{erro || "Livro não encontrado."}</p>;
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <section className="borda-neon mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-marrom/70 p-6">
-        <div>
-          <h1 className="font-gotica text-4xl neon-ouro sm:text-5xl">O acervo</h1>
-          <p className="mt-1 text-lg italic text-verde-neon/90">
-            {carregando ? "Abrindo as estantes..." : `${livros.length} livro(s) guardado(s) no grimório.`}
-          </p>
-        </div>
-        <Link href="/livros/novo" className="btn-neon font-gotica rounded-full px-5 py-2 text-xl">
-          Novo livro
-        </Link>
-      </section>
+    <div className="mx-auto max-w-5xl">
+      <nav className="mb-4 text-sm text-ouro/70">
+        <Link href="/livros" className="hover:text-verde-neon">← Voltar ao acervo</Link>
+      </nav>
 
-      {erro && <p className="mb-4 rounded border border-red-400/60 bg-red-950/40 p-3 text-red-300">{erro}</p>}
-
-      <input
-        value={busca} onChange={(e) => setBusca(e.target.value)}
-        placeholder="Buscar por título ou ISBN" aria-label="Buscar livros"
-        className="mb-6 w-full max-w-md rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]"
-      />
-
-      {!carregando && filtrados.length === 0 && (
-        <p className="text-lg">
-          {livros.length === 0 ? "Nenhum livro cadastrado ainda. Use “Novo livro” para começar o acervo." : "Nenhum livro encontrado para essa busca."}
-        </p>
-      )}
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {filtrados.map((l) => (
-          <Link key={l.id} href={`/livros/${l.id}`}
-            className="cartao borda-neon overflow-hidden rounded-lg bg-marrom/70 text-left focus-visible:outline-2 focus-visible:outline-verde-neon hover:scale-[1.02] transition-transform">
-            <Capa isbn={l.isbn} url={l.capaUrl} titulo={l.volume} className="aspect-[2/3]" />
-            <div className="p-3">
-              <h3 className="line-clamp-2 text-lg leading-tight">{l.volume}</h3>
-              <p className="text-sm text-ouro">{l.tipo ?? "Físico"} · {l.paginas} págs.</p>
-              {l.dataLancamento && <p className="text-xs text-ouro/60">{anoLancamento(l.dataLancamento)}</p>}
+      <div className="borda-neon mb-8 rounded-lg bg-marrom/70 p-6">
+        <div className="flex flex-col gap-6 sm:flex-row">
+          <Capa isbn={livro.isbn} url={livro.capaUrl} titulo={livro.volume} className="aspect-[2/3] w-44 shrink-0 self-center rounded sm:self-start" />
+          <div className="flex-1">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="font-gotica text-3xl neon-ouro sm:text-4xl">{livro.volume}</h1>
+              {souAdmin && (
+                <div className="flex gap-2">
+                  <Link href={`/livros/${livro.id}/editar`}
+                    className="rounded border border-verde-neon px-3 py-1 text-verde-neon hover:bg-verde-neon hover:text-noite">
+                    ✏️ Editar
+                  </Link>
+                  <button onClick={excluir}
+                    className="rounded border border-red-400/70 px-3 py-1 text-red-300 hover:bg-red-950/50">
+                    Remover
+                  </button>
+                </div>
+              )}
             </div>
-          </Link>
-        ))}
+            <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-lg">
+              <dt className="text-ouro">ISBN</dt><dd>{livro.isbn}</dd>
+              <dt className="text-ouro">Edição</dt><dd>{livro.edicao ?? "—"}</dd>
+              <dt className="text-ouro">Tipo</dt><dd>{livro.tipo ?? "—"}</dd>
+              <dt className="text-ouro">Páginas</dt><dd>{livro.paginas}</dd>
+              <dt className="text-ouro">Lançamento</dt><dd>{anoLancamento(livro.dataLancamento) || "—"}</dd>
+            </dl>
+            {livro.descricao && <p className="mt-3 text-lg leading-snug">{livro.descricao}</p>}
+          </div>
+        </div>
       </div>
+
+      <ExemplaresTable livroId={livro.id} podeGerenciar={souAdmin} />
     </div>
   );
 }

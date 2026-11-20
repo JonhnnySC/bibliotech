@@ -9,3 +9,12 @@ export async function login(email: string, senha: string): Promise<LoginResponse
 export async function registrar(corpo: { nome: string; email: string; cpf: string; senha: string }): Promise<void> {
   await api.post("/auth/registro", corpo);
 }
+
+export async function logoutNoServidor(): Promise<void> {
+  try {
+    await api.post("/auth/logout");
+  } catch {
+    /* token ja invalido: tudo bem */
+    
+  }
+}

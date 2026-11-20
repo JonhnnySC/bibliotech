@@ -1,34 +1,49 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
 import Livro from "./Livro";
-import { limparSessao } from "@/app/services/sessao";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { sessaoEncerrada } from "../store/authSlice";
+import { logout } from "../store/authSlice";
+import { logoutNoServidor } from "../services/authService";
 
 export default function Header({ onToggle }: { onToggle: () => void }) {
-  const router = useRouter();
   const dispatch = useAppDispatch();
-  const email = useAppSelector((estado) => estado.auth.email) ?? "";
+  const usuario = useAppSelector((s) => s.auth.usuario);
+  const [saindo, setSaindo] = useState(false);
 
-  function sair() {
-    limparSessao();
-    dispatch(sessaoEncerrada());
-    router.push("/login");
+  const email = usuario?.email ?? "";
+  const perfil = usuario?.perfil ?? "";
+
+  async function sair() {
+    setSaindo(true);
+    try {
+      await logoutNoServidor();   // apaga a linha na tabela token (erro ignorado)
+    } finally {
+      dispatch(logout());         // store esvazia -> o layout mostra TelaLogin
+      setSaindo(false);
+    }
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-ouro bg-noite/90 px-4 py-3 shadow-[0_2px_16px_#c99a2e55]">
+    <header className="borda-neon flex items-center justify-between bg-marrom/80 px-4 py-3">
       <div className="flex items-center gap-3">
-        <button onClick={onToggle} aria-label="Alternar menu" className="text-3xl text-ouro-neon hover:text-verde-neon">☰</button>
-        <Livro className="h-8 w-8" />
-        <span className="font-gotica text-2xl neon-ouro">BiblioTech</span>
+        <button type="button" onClick={onToggle} aria-label="Alternar menu"
+                className="btn-neon rounded px-3 py-1">☰</button>
+        <Link href="/home" className="flex items-center gap-2">
+          <Livro className="h-8 w-8 pulsar" />
+          <span className="font-gotica text-2xl neon-ouro">BiblioTech</span>
+        </Link>
       </div>
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-verde-neon bg-musgo text-lg neon-verde">
-          {email ? email[0].toUpperCase() : "?"}
+
+      <div className="flex items-center gap-4">
+        <div className="text-right leading-tight">
+          <p className="text-ouro-neon">{email}</p>
+          <p className="text-xs text-ouro">{perfil}</p>
         </div>
-        <span className="hidden text-sm sm:block">{email}</span>
-        <button onClick={sair} className="rounded border border-ouro px-3 py-1 text-ouro-neon hover:bg-ouro hover:text-noite">Sair</button>
+        <button type="button" onClick={sair} disabled={saindo}
+                className="btn-neon font-gotica rounded-full px-4 py-1 text-xl disabled:opacity-50">
+          {saindo ? "Fechando..." : "Sair"}
+        </button>
       </div>
     </header>
   );
