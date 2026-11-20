@@ -1026,4 +1026,6 @@ UsuarioService.cadastrar CONTINUA: serve ao POST /usuarios.
 ---
 
 # PARTE 2 (a anexar): Fases 4, 5 e 6
-PARTE1_FIM
+PARTE1_FIMagonegro@JonhnnyPC:~/dev/projects/java/bibliotech$ git push origin main
+remote: Invalid username or token. Password authentication is not supported for Git operations.
+fatal: Authentication failed for 'https://github.com/JonhnnySC/bibliotech.git/'
