@@ -1,0 +1,6 @@
+
+digitar um CEP, o endereço aparece sozinho, salvar, recarregar e o endereço continua lá.
+
+Removi  o Flyway; Os campos de endereço nascem das anotações da entidade. E o seu interceptor transforma erro em Error(mensagem) — o código do guia com e.response.status não funciona no seu front.
+
+Pré-requisito: BibliotecaDoLogado (Fase 4). Se você ainda não fez, o passo 5.0 traz uma versão provisória.

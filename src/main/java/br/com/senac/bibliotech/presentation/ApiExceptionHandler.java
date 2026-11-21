@@ -1,10 +1,8 @@
 package br.com.senac.bibliotech.presentation;
 
-import br.com.senac.bibliotech.application.exception.AcessoNegadoException;
+import br.com.senac.bibliotech.application.exception.*;
 import br.com.senac.bibliotech.domain.exception.ConflitoException;
-import br.com.senac.bibliotech.application.exception.CredenciaisInvalidasException;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
-import br.com.senac.bibliotech.application.exception.TokenException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -65,5 +63,14 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AcessoNegadoException.class)
     public ProblemDetail acessoNegado(AcessoNegadoException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+    //Eu coloquei essas duas ecessoes pór que o REspionseStatusExceptio carrega o hhttopsatus pra dentro da regra de negocio, o negocio diz o servico externo caiu, a web decide se isso é 503
+    @ExceptionHandler(ServicoExternoIndisponivelException.class)
+    public ProblemDetail servicoExterno(ServicoExternoIndisponivelException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+    @ExceptionHandler(RequisicaoInvalidaException.class)
+    public ProblemDetail requisicaoInvalida(RequisicaoInvalidaException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }

@@ -20,6 +20,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Biblioteca {
 
+    // biblioteca nasce no bootstrap só com nome e CNPJ
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,6 +29,26 @@ public class Biblioteca {
     private String nome;
 
     private String cnpj;
+
+    //por quer collum? o hibernate ve o tamanho da coluna, com ddl update, esses campos sao ccolocados na subida serm apagar
+
+    @Column(length = 8)
+    private String cep;
+    @Column(length = 150)
+    private String logradouro;
+    @Column(length = 20)
+    private String numero;
+    @Column(length = 100)
+    private String complemento;
+    @Column(length = 100)
+    private String bairro;
+    @Column(length = 100)
+    private String cidade;
+    @Column(length = 2)
+    private String uf;
+
+
+
 
 
 }
