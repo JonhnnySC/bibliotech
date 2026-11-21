@@ -1,5 +1,6 @@
 package br.com.senac.bibliotech.application.service;
 
+import br.com.senac.bibliotech.application.dto.BibliotecaRequest;
 import br.com.senac.bibliotech.application.dto.BibliotecaResponse;
 import br.com.senac.bibliotech.application.dto.EnderecoCep;
 import br.com.senac.bibliotech.application.exception.RequisicaoInvalidaException;
@@ -21,11 +22,12 @@ public class BibliotecaService {
 
     @Transactional(readOnly = true)
     public BibliotecaResponse buscarMinhaBiblioteca() {
-        return paraResponse(buscarMinhaBiblioteca());
+        return paraResponse(carregarBibliotecaLogada());
     }
+
     @Transactional
-    public BibliotecaResponse atualizarMinhaBiblioteca(MinhaBibliotecaRequest request) {
-        Biblioteca biblioteca = buscarMinhaBiblioteca();
+    public BibliotecaResponse atualizarMinhaBiblioteca(BibliotecaRequest request) {
+        Biblioteca biblioteca = carregarBibliotecaLogada();
         EnderecoCep endereco = consultarOuErro(request.cep());
 
         biblioteca.setNome(request.nome().trim());
@@ -38,27 +40,27 @@ public class BibliotecaService {
         biblioteca.setUf(endereco.uf());
 
         return paraResponse(bibliotecaRepository.save(biblioteca));
-
     }
 
     public EnderecoCep consultarCep(String cep) {
-        return consutarOuErro(cep);
+        return consultarOuErro(cep);
     }
 
     private EnderecoCep consultarOuErro(String cep) {
         if (cep == null || !cep.matches("\\d{8}")) {
             throw new RequisicaoInvalidaException("O cep deve ter 8 digitos");
         }
-        return consultaCep.consultarCep(cep)
+        return consultaCep.consultar(cep)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Não foi possível consultar o cep informado"));
     }
 
-    private Biblioteca buscarMinhaBiblioteca() {
+    private Biblioteca carregarBibliotecaLogada() {
         return bibliotecaRepository.findById(bibliotecaLogado.id())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Não foi possível encontrar a biblioteca logada"));
     }
-    private BibliotecaResponse paraResponse(Biblioteca biblioteca) {
-        return new BibliotecaResponse(biblioteca.getId(), biblioteca.getNome(), biblioteca.getCnpj(), biblioteca.getNumero(),
-                biblioteca.getCep(), biblioteca.getLogradouro(), biblioteca.getBairro(), biblioteca.getCidade(), biblioteca.getUf());
+
+    private BibliotecaResponse paraResponse(Biblioteca b) {
+        return new BibliotecaResponse(b.getId(), b.getNome(), b.getCnpj(), b.getCep(), b.getLogradouro(),
+                b.getNumero(), b.getComplemento(), b.getBairro(), b.getCidade(), b.getUf());
     }
 }

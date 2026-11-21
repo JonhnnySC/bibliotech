@@ -1,5 +1,6 @@
 package br.com.senac.bibliotech.presentation;
 
+import br.com.senac.bibliotech.application.dto.BibliotecaRequest;
 import br.com.senac.bibliotech.application.dto.BibliotecaResponse;
 import br.com.senac.bibliotech.application.dto.EnderecoCep;
 import br.com.senac.bibliotech.application.service.BibliotecaService;
@@ -23,9 +24,8 @@ public class BibliotecaController {
         return service.buscarMinhaBiblioteca();
     }
 
-    @GetMapping("/minha-biblioteca")
-    @Operation(summary = "Atualizar minha biblioteca", description = "Atualiza os dados da biblioteca logada")
-    public BibliotecaResponse atualizarMinhaBiblioteca(@Valid @RequestBody MinhaBibliotecaRequest request) {
+    @PutMapping("/minha-biblioteca")   // estava @GetMapping, duplicando a rota do GET
+    public BibliotecaResponse atualizarMinhaBiblioteca(@Valid @RequestBody BibliotecaRequest request) {
         return service.atualizarMinhaBiblioteca(request);
     }
 

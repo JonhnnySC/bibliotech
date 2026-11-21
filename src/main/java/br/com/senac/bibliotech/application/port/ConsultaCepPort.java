@@ -1,5 +1,6 @@
 package br.com.senac.bibliotech.application.port;
 
+import br.com.senac.bibliotech.application.dto.EnderecoCep;
 
 import java.util.Optional;
 
@@ -9,5 +10,5 @@ public interface ConsultaCepPort {
     //pq opitional? é uma caixa vazia que pode ter um valor ou nao, mas nao ser null, por que null obriga a tgrtatar o caso vazio
     // mas por que aionda sim nesse caso?
     //r - cep nao existir é uma resposta noormal, e nao uma excecao.
-    Optional<String> consultaCep(String cep);
+    Optional<EnderecoCep> consultar(String cep);
 }

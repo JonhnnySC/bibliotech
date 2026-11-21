@@ -32,7 +32,7 @@ public class ViaCepClient implements ConsultaCepPort {
         var factory = new JdkClientHttpRequestFactory(http);
         factory.setReadTimeout(Duration.ofSeconds(3)); //tempo pra ler a resposta do servidor
         this.restClient = RestClient.builder()
-                .BaseUrl(baseUrl)
+                .baseUrl(baseUrl)
                 .requestFactory(factory)
                 .build();
     }
