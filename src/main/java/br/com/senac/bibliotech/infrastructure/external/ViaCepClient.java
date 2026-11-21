@@ -38,35 +38,32 @@ public class ViaCepClient implements ConsultaCepPort {
     }
 
     @Override
-    public Optional<EnderecoCep> consultarCep(String cep) {
+    public Optional<EnderecoCep> consultar(String cep) {   // nome igual ao da porta
         try {
             ViaCepResposta resposta = restClient.get()
                     .uri("/{cep}/json/", cep)
                     .retrieve()
-                    .body(ViaCepClient.class);
+                    .body(ViaCepResposta.class);
 
             if (resposta == null || "true".equals(String.valueOf(resposta.erro()))) {
                 return Optional.empty();
             }
 
-            log.info("ViaCEP respondeu pra o cep {}", cep);
+            log.info("ViaCEP respondeu para o CEP {}", cep);
             return Optional.of(new EnderecoCep(cep,
                     resposta.logradouro(),
+                    resposta.complemento(),
                     resposta.bairro(),
                     resposta.localidade(),
                     resposta.uf()));
 
         } catch (RestClientException exception) {
-            log.warn("VIaCEP indiponivel para o cep {}: {}", cep, exception.getMessage());
+            log.warn("ViaCEP indisponível para o CEP {}: {}", cep, exception.getMessage());
             throw new ServicoExternoIndisponivelException("Serviço externo de CEP não disponível agora", exception);
         }
     }
-    // ignora tudo que eu nao pedir
+
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ViaCepResposta(
-            String logradouro;
-            String bairro;
-            String localidade;
-            String uf;
-            Boolean erro)
+    private record ViaCepResposta(String logradouro, String complemento, String bairro,
+                                  String localidade, String uf, Object erro) {}
 }
