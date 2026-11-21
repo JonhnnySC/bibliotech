@@ -6,9 +6,11 @@ import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,6 +60,20 @@ public class ApiExceptionHandler {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Dados inválidos");
         problema.setProperty("campos", campos);
         return problema;
+    }
+
+    // JSON malformado, corpo ausente ou valor de enum/data inválido no corpo = 400
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail corpoIlegivel(HttpMessageNotReadableException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Corpo da requisição ausente ou inválido");
+    }
+
+    // Parâmetro de URL/query com tipo errado (ex.: ?statusExemplar=XYZ, /livros/abc) = 400
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail parametroInvalido(MethodArgumentTypeMismatchException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Valor inválido para o parâmetro '" + ex.getName() + "'");
     }
 
     @ExceptionHandler(AcessoNegadoException.class)

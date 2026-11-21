@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ import java.util.List;
 @RequestMapping("/emprestimos")
 @RequiredArgsConstructor
 @Tag(name = "Empréstimos", description = "Gerenciamento dos Empréstismos")
-public class    EmprestimoController {
+public class EmprestimoController {
 
     private final EmprestimoService emprestimoService;
 
@@ -32,7 +33,7 @@ public class    EmprestimoController {
     })
 
 
-    public ResponseEntity<EmprestimoResponse> criar(@RequestBody EmprestimoRequest emprestimoRequest) {
+    public ResponseEntity<EmprestimoResponse> criar(@Valid @RequestBody EmprestimoRequest emprestimoRequest) {
         EmprestimoResponse novoEmprestimo = emprestimoService.realizarEmprestimo(
                 emprestimoRequest.leitorId(),
                 emprestimoRequest.exemplarId());

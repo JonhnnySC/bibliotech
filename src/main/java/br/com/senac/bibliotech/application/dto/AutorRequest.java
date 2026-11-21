@@ -1,7 +1,9 @@
 package br.com.senac.bibliotech.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -22,6 +24,6 @@ public record AutorRequest(
         String fotoUrl,
 
         // opcional: se vier null, os vínculos atuais NÃO são alterados
-        List<Long> livroIds
+        List<@NotNull(message = "Id de livro inválido") @Positive(message = "Id de livro inválido") Long> livroIds
 ) {
 }
