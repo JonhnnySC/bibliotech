@@ -1,10 +1,14 @@
 package br.com.senac.bibliotech.domain.valueObject;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+
 import java.util.Objects;
 
-
+@Embeddable
 public class CPF {
 
+    @Column(name = "cpf", nullable = false, unique = true, length = 11)
     private String cpf;
 
     public CPF() {

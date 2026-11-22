@@ -82,8 +82,7 @@ public class UsuarioService {
         // (/auth/registro) não há ninguém logado, então fica sem biblioteca.
         UsuarioLogado logado = usuarioLogadoOuNulo();
         if (logado != null && logado.bibliotecaId() != null) {
-            leitor.setBiblioteca(bibliotecaRepository.getReferenceById(logado.bibliotecaId()));
-        }
+            leitor.setBiblioteca(bibliotecaRepository.referencia(logado.bibliotecaId()));        }
 
         return UsuarioResponse.from(usuarioRepository.save(leitor));
     }

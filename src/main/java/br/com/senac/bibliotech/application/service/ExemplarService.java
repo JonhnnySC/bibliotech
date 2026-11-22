@@ -21,10 +21,11 @@ public class ExemplarService {
 
     private final ExemplarRepository exemplarRepository;
     private final LivroRepository livroRepository;
+    private final BibliotecaLogado bibliotecaLogado;   // novo
 
     @Transactional
     public ExemplarResponse criar(ExemplarRequest request) {
-        Livro livro = livroRepository.findById(request.livroId())
+        Livro livro = livroRepository.findByIdAndBibliotecaId(request.livroId(), bibliotecaLogado.id())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Livro", request.livroId()));
 
         Exemplar exemplar = Exemplar.builder()
@@ -39,6 +40,9 @@ public class ExemplarService {
     }
 
     public List<ExemplarResponse> listarPorLivro(Long livroId) {
+        if (!livroRepository.existsByIdAndBibliotecaId(livroId, bibliotecaLogado.id())) {
+            throw new RecursoNaoEncontradoException("Livro", livroId);
+        }
         return exemplarRepository.findByLivroId(livroId).stream()
                 .map(ExemplarResponse::from)
                 .toList();

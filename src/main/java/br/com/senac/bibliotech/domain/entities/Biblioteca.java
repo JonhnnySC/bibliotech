@@ -28,6 +28,7 @@ public class Biblioteca {
 
     private String nome;
 
+    @Column(nullable = false, unique = true, length = 14)
     private String cnpj;
 
     //por quer collum? o hibernate ve o tamanho da coluna, com ddl update, esses campos sao ccolocados na subida serm apagar

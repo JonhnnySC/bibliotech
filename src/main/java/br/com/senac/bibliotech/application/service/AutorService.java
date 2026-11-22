@@ -21,6 +21,7 @@ public class AutorService {
 
     private final AutorRepository autorRepository;
     private final LivroRepository livroRepository;
+    private final BibliotecaLogado bibliotecaLogado;   // novo
 
     @Transactional
     public AutorResponse criar(AutorRequest request) {
@@ -82,7 +83,7 @@ public class AutorService {
     private void sincronizarLivros(Autor autor, List<Long> ids) {
         List<Long> desejados = ids == null ? List.of() : ids.stream().distinct().toList();
 
-        List<Livro> encontrados = livroRepository.findAllById(desejados);
+        List<Livro> encontrados = livroRepository.findAllByIdInAndBibliotecaId(desejados, bibliotecaLogado.id());
         if (encontrados.size() != desejados.size()) {
             Set<Long> achados = new HashSet<>();
             encontrados.forEach(l -> achados.add(l.getId()));

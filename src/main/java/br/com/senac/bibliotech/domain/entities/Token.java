@@ -21,7 +21,7 @@ public class Token {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 1000)
+    @Column(nullable = false, unique = true, length = 1024)
     private String token;
 
     @Column(name = "data_cadastro", nullable = false)

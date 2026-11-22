@@ -34,6 +34,9 @@ public class Usuario implements UserDetails {
     private Long id;
 
     private String nome;
+
+
+    @Column(nullable = false, unique = true, length = 150)
     private String email;
     private String senha;
 
@@ -52,8 +55,8 @@ public class Usuario implements UserDetails {
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
 
     // Multibiblioteca (equivalente da empresa do professor). Nulo = acesso a todas.
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "biblioteca_id", referencedColumnName = "id")
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "biblioteca_id", nullable = false, updatable = false)
     private Biblioteca biblioteca;
 
     // Validação dentro da entidade (como o setEmail do professor)

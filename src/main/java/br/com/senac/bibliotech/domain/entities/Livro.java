@@ -7,7 +7,10 @@ import java.time.LocalDate;
 //n usar @data por que inclui to strin e equaisl and has code, numa entidade que é relacionada bidericenialmente
 //optei por colocar livro tendo yuma lista exemplar, e coimo so tem UMA referencia a livro, elas são bidirecionais = o toString() gerado pega os dois lados infinitamente, evitar @data
 @Entity
-@Table(name = "livro")
+//adicionado por causa que os livros precisam ser unicosp por biblioteca .
+@Table(name = "livro",
+        uniqueConstraints = @UniqueConstraint(name = "uk_livro_biblioteca_isbn",
+                columnNames = {"biblioteca_id", "isbn"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,6 +22,8 @@ public class Livro {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String volume;
+
+    @Column(nullable = false, length = 20)
     private String isbn;
     private String descricao;
     private String edicao;

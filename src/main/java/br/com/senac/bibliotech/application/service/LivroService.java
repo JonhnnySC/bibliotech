@@ -3,24 +3,30 @@ package br.com.senac.bibliotech.application.service;
 import br.com.senac.bibliotech.application.dto.LivroRequest;
 import br.com.senac.bibliotech.application.dto.LivroResponse;
 import br.com.senac.bibliotech.domain.entities.Livro;
+import br.com.senac.bibliotech.domain.exception.ConflitoException;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
+import br.com.senac.bibliotech.domain.repository.BibliotecaRepository;
 import br.com.senac.bibliotech.domain.repository.LivroRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class LivroService {
 
     private final LivroRepository livroRepository;
+    private final BibliotecaRepository bibliotecaRepository;
+    private final BibliotecaLogado bibliotecaLogado;
 
     @Transactional
     public LivroResponse criar(LivroRequest request) {
+        Long bibliotecaId = bibliotecaLogado.id();
+        validarIsbnLivre(bibliotecaId, request.isbn());
+
         Livro livro = Livro.builder()
                 .volume(request.volume())
                 .isbn(request.isbn())
@@ -29,6 +35,8 @@ public class LivroService {
                 .tipo(request.tipo())
                 .paginas(request.paginas())
                 .dataLancamento(request.dataLancamento())
+                .capaUrl(request.capaUrl())
+                .biblioteca(bibliotecaRepository.referencia(bibliotecaId))
                 .build();
 
         return LivroResponse.from(livroRepository.save(livro));
@@ -36,8 +44,11 @@ public class LivroService {
 
     @Transactional
     public LivroResponse atualizar(Long id, LivroRequest dto) {
-        Livro livro = livroRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Livro não encontrado"));
+        Livro livro = buscarNoEscopo(id);
+
+        if (!Objects.equals(livro.getIsbn(), dto.isbn())) {
+            validarIsbnLivre(bibliotecaLogado.id(), dto.isbn());
+        }
 
         livro.setVolume(dto.volume());
         livro.setIsbn(dto.isbn());
@@ -46,29 +57,36 @@ public class LivroService {
         livro.setTipo(dto.tipo());
         livro.setPaginas(dto.paginas());
         livro.setDataLancamento(dto.dataLancamento());
-        livro.setCapaUrl(dto.capaUrl());   // <- a capa
+        livro.setCapaUrl(dto.capaUrl());
 
-        return LivroResponse.from(livroRepository.save(livro));    }
+        return LivroResponse.from(livroRepository.save(livro));
+    }
 
-    @Transactional(readOnly = true) // Adicione esta linha!
+    @Transactional(readOnly = true)
     public List<LivroResponse> listarTodos() {
-        return livroRepository.findAll().stream()
+        return livroRepository.findAllByBibliotecaId(bibliotecaLogado.id()).stream()
                 .map(LivroResponse::from)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public LivroResponse buscarPorId(Long id) {
-        Livro livro = livroRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Livro", id));
-        return LivroResponse.from(livro);
+        return LivroResponse.from(buscarNoEscopo(id));
     }
 
     @Transactional
     public void deletar(Long id) {
-        if (!livroRepository.existsById(id)) {
-            throw new RecursoNaoEncontradoException("Livro", id);
+        livroRepository.delete(buscarNoEscopo(id));
+    }
+
+    private Livro buscarNoEscopo(Long id) {
+        return livroRepository.findByIdAndBibliotecaId(id, bibliotecaLogado.id())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Livro", id));
+    }
+
+    private void validarIsbnLivre(Long bibliotecaId, String isbn) {
+        if (isbn != null && livroRepository.existsByBibliotecaIdAndIsbn(bibliotecaId, isbn)) {
+            throw new ConflitoException("Já existe um livro com esse ISBN nesta biblioteca");
         }
-        livroRepository.deleteById(id);
     }
 }
