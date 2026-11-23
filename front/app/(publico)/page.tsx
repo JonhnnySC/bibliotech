@@ -1,6 +1,6 @@
 import Link from "next/link";
-import EsferaArmilar from "./components/EsferaArmilar";
-import Livro from "./components/Livro";
+import EsferaArmilar from "@/app/components/EsferaArmilar";
+import Livro from "@/app/components/Livro";
 
 const recursos = [
   { icone: "📖", titulo: "Acervo", texto: "Cadastre livros com capa, ISBN, edição e páginas, ligados aos seus autores." },

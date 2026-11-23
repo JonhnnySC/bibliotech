@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listarUsuarios, atualizarPerfilUsuario, atualizarStatusUsuario, excluirUsuario } from "@/app/services/usuarioService";
-import { obterEmailLogado } from "@/app/services/sessao";
+import { useAppSelector } from "@/app/store/hooks";
 import type { Perfil, StatusUsuario, Usuario } from "../../types/usuario";
 
 /**
@@ -37,7 +37,7 @@ export default function UsuariosPage() {
   }
 
   // Só ADMIN vê os seletores de promoção (compara com quem está logado)
-  const emailLogado = obterEmailLogado();
+  const emailLogado = useAppSelector((s) => s.auth.usuario?.email) ?? "";
   const souAdmin = usuarios.some((u) => u.email === emailLogado && String(u.perfil) === "ADMINISTRADOR");
 
   const filtrados = usuarios.filter((u) =>
