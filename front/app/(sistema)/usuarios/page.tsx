@@ -1,7 +1,13 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listarUsuarios, atualizarPerfilUsuario, atualizarStatusUsuario, excluirUsuario } from "@/app/services/usuarioService";
+import {
+  listarUsuarios,
+  atualizarPerfilUsuario,
+  atualizarStatusUsuario,
+  excluirUsuario,
+} from "@/app/services/usuarioService";
 import { useAppSelector } from "@/app/store/hooks";
 import type { Perfil, StatusUsuario, Usuario } from "../../types/usuario";
 
@@ -15,12 +21,17 @@ export default function UsuariosPage() {
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
 
+  // O perfil já vem no login e mora na store: não precisa procurar o logado
+  // na lista (isso gerava "piscada" e uma requisição extra).
+  const perfilLogado = useAppSelector((s) => s.auth.usuario?.perfil);
+  const souAdmin = perfilLogado === "ADMINISTRADOR";
+
   useEffect(() => {
     let vivo = true;
     listarUsuarios()
-      .then((d) => { if (vivo) { setUsuarios(d.filter((u) => u.status !== "EXCLUIDO")); setErro(""); } })
-      .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar usuários"); })
-      .finally(() => { if (vivo) setCarregando(false); });
+        .then((d) => { if (vivo) { setUsuarios(d.filter((u) => u.status !== "EXCLUIDO")); setErro(""); } })
+        .catch((e) => { if (vivo) setErro(e instanceof Error ? e.message : "Erro ao carregar usuários"); })
+        .finally(() => { if (vivo) setCarregando(false); });
     return () => { vivo = false; };
   }, []);
 
@@ -36,13 +47,9 @@ export default function UsuariosPage() {
     }
   }
 
-  // Só ADMIN vê os seletores de promoção (compara com quem está logado)
-  const emailLogado = useAppSelector((s) => s.auth.usuario?.email) ?? "";
-  const souAdmin = usuarios.some((u) => u.email === emailLogado && String(u.perfil) === "ADMINISTRADOR");
-
   const filtrados = usuarios.filter((u) =>
-    u.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    u.email.toLowerCase().includes(busca.toLowerCase())
+      u.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      u.email.toLowerCase().includes(busca.toLowerCase())
   );
 
   /** Promover/rebaixar — endpoint exclusivo de ADMIN. */
@@ -78,85 +85,86 @@ export default function UsuariosPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <section className="borda-neon mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-marrom/70 p-6">
-        <div>
-          <h1 className="font-gotica text-4xl neon-ouro sm:text-5xl">Usuários</h1>
-          <p className="mt-1 text-lg italic text-verde-neon/90">
-            {carregando ? "Consultando os registros..." : `${filtrados.length} usuário(s).`}
-          </p>
-        </div>
-        <Link href="/usuarios/novo" className="btn-neon font-gotica rounded-full px-5 py-2 text-xl">
-          Novo usuário
-        </Link>
-      </section>
+      <div className="mx-auto max-w-6xl">
+        <section className="borda-neon mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-marrom/70 p-6">
+          <div>
+            <h1 className="font-gotica text-4xl neon-ouro sm:text-5xl">Usuários</h1>
+            <p className="mt-1 text-lg italic text-verde-neon/90">
+              {carregando ? "Consultando os registros..." : `${filtrados.length} usuário(s).`}
+            </p>
+          </div>
+          <Link href="/usuarios/novo" className="btn-neon font-gotica rounded-full px-5 py-2 text-xl">
+            Novo usuário
+          </Link>
+        </section>
 
-      {erro && <p className="mb-4 rounded border border-red-400/60 bg-red-950/40 p-3 text-red-300">{erro}</p>}
+        {erro && <p className="mb-4 rounded border border-red-400/60 bg-red-950/40 p-3 text-red-300">{erro}</p>}
 
-      <input
-        value={busca} onChange={(e) => setBusca(e.target.value)}
-        placeholder="Buscar por nome ou e-mail"
-        className="mb-6 w-full max-w-md rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]"
-      />
+        <input
+            value={busca} onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome ou e-mail"
+            className="mb-6 w-full max-w-md rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]"
+        />
 
-      <div className="overflow-x-auto rounded-lg border border-ouro bg-marrom/60">
-        <table className="w-full text-left">
-          <thead className="bg-musgo text-ouro-neon">
+        <div className="overflow-x-auto rounded-lg border border-ouro bg-marrom/60">
+          <table className="w-full text-left">
+            <thead className="bg-musgo text-ouro-neon">
             <tr>
               <th className="p-3">Nome</th><th className="p-3">E-mail</th>
-              <th className="p-3">Perfil</th><th className="p-3">Status</th><th className="p-3 text-right">Ações</th>
+              <th className="p-3">Perfil</th><th className="p-3">Status</th>
+              <th className="p-3 text-right">Ações</th>
             </tr>
-          </thead>
-          <tbody>
+            </thead>
+            <tbody>
             {!carregando && filtrados.length === 0 && (
-              <tr><td colSpan={5} className="p-6 text-center text-lg">Nenhum usuário encontrado.</td></tr>
+                <tr><td colSpan={5} className="p-6 text-center text-lg">Nenhum usuário encontrado.</td></tr>
             )}
             {filtrados.map((u) => (
-              <tr key={u.id} className="border-t border-marrom-claro hover:bg-noite/30 transition-colors">
-                <td className="p-3 font-medium">{u.nome}</td>
-                <td className="p-3 text-ouro/80">{u.email}</td>
-                <td className="p-3">
-                  {souAdmin ? (
-                    <select value={u.perfil} onChange={(e) => mudarPerfil(u.id, e.target.value as Perfil)}
-                      aria-label={`Perfil de ${u.nome}`}
-                      className="rounded border border-ouro bg-noite/80 px-2 py-1 text-xs text-ouro-neon">
-                      <option value="LEITOR">LEITOR</option>
-                      <option value="BIBLIOTECARIO">BIBLIOTECARIO</option>
-                      <option value="ADMINISTRADOR">ADMINISTRADOR</option>
-                    </select>
-                  ) : (
-                    <span className={`rounded px-2 py-1 text-xs font-bold ${
-                      u.perfil === "ADMINISTRADOR" ? "bg-red-900/50 text-red-300" :
-                      u.perfil === "BIBLIOTECARIO" ? "bg-amber-900/50 text-amber-300" :
-                      "bg-verde-neon/20 text-verde-neon"}`}>{u.perfil}</span>
-                  )}
-                </td>
-                <td className="p-3">
-                  <span className={`rounded px-2 py-1 text-xs font-bold ${u.status === "ATIVO" ? "bg-verde-neon/20 text-verde-neon" : "bg-red-900/50 text-red-300"}`}>
-                    {u.status}
-                  </span>
-                </td>
-                <td className="p-3 text-right">
-                  <div className="flex justify-end gap-2">
-                    <Link href={`/usuarios/${u.id}/editar`}
-                      className="rounded border border-verde-neon px-3 py-1 text-sm text-verde-neon hover:bg-verde-neon hover:text-noite">
-                      Editar
-                    </Link>
-                    <button onClick={() => toggleStatus(u.id, u.status)}
-                      className="rounded border border-ouro px-3 py-1 text-sm text-ouro-neon hover:bg-ouro hover:text-noite">
-                      {u.status === "ATIVO" ? "Bloquear" : "Ativar"}
-                    </button>
-                    <button onClick={() => excluir(u.id)}
-                      className="rounded border border-red-400 px-3 py-1 text-sm text-red-300 hover:bg-red-950/50">
-                      Excluir
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                <tr key={u.id} className="border-t border-marrom-claro hover:bg-noite/30 transition-colors">
+                  <td className="p-3 font-medium">{u.nome}</td>
+                  <td className="p-3 text-ouro/80">{u.email}</td>
+                  <td className="p-3">
+                    {souAdmin ? (
+                        <select value={u.perfil} onChange={(e) => mudarPerfil(u.id, e.target.value as Perfil)}
+                                aria-label={`Perfil de ${u.nome}`}
+                                className="rounded border border-ouro bg-noite/80 px-2 py-1 text-xs text-ouro-neon">
+                          <option value="LEITOR">LEITOR</option>
+                          <option value="BIBLIOTECARIO">BIBLIOTECARIO</option>
+                          <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                        </select>
+                    ) : (
+                        <span className={`rounded px-2 py-1 text-xs font-bold ${
+                            u.perfil === "ADMINISTRADOR" ? "bg-red-900/50 text-red-300" :
+                                u.perfil === "BIBLIOTECARIO" ? "bg-amber-900/50 text-amber-300" :
+                                    "bg-verde-neon/20 text-verde-neon"}`}>{u.perfil}</span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                                    <span className={`rounded px-2 py-1 text-xs font-bold ${u.status === "ATIVO" ? "bg-verde-neon/20 text-verde-neon" : "bg-red-900/50 text-red-300"}`}>
+                                        {u.status}
+                                    </span>
+                  </td>
+                  <td className="p-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <Link href={`/usuarios/${u.id}/editar`}
+                            className="rounded border border-verde-neon px-3 py-1 text-sm text-verde-neon hover:bg-verde-neon hover:text-noite">
+                        Editar
+                      </Link>
+                      <button onClick={() => toggleStatus(u.id, u.status)}
+                              className="rounded border border-ouro px-3 py-1 text-sm text-ouro-neon hover:bg-ouro hover:text-noite">
+                        {u.status === "ATIVO" ? "Bloquear" : "Ativar"}
+                      </button>
+                      <button onClick={() => excluir(u.id)}
+                              className="rounded border border-red-400 px-3 py-1 text-sm text-red-300 hover:bg-red-950/50">
+                        Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
             ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
   );
 }

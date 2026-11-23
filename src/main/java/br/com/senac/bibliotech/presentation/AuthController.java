@@ -1,38 +1,43 @@
 package br.com.senac.bibliotech.presentation;
 
-import br.com.senac.bibliotech.application.dto.*;
+import br.com.senac.bibliotech.application.dto.BootstrapRequest;
+import br.com.senac.bibliotech.application.dto.BootstrapResponse;
+import br.com.senac.bibliotech.application.dto.LoginRequest;
+import br.com.senac.bibliotech.application.dto.LoginResponse;
 import br.com.senac.bibliotech.application.service.AuthService;
 import br.com.senac.bibliotech.application.service.BootstrapService;
-import br.com.senac.bibliotech.application.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Autenticação", description = "Login e obtencao do token JWT")
+@Tag(name = "Autenticação", description = "Login, logout e primeira configuração do sistema")
 public class AuthController {
 
     private final AuthService authService;
-    private final UsuarioService usuarioService;
     private final BootstrapService bootstrapService;
 
-    public AuthController(AuthService authService, UsuarioService usuarioService, BootstrapService bootstrapService) {
+    public AuthController(AuthService authService, BootstrapService bootstrapService) {
         this.authService = authService;
-        this.usuarioService = usuarioService;
         this.bootstrapService = bootstrapService;
     }
 
-
     @PostMapping("/login")
-    @Operation(summary = "Login", description = "Validação das credenciais e retorno")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Login Realizado e token retornado"),
+    @Operation(summary = "Login",
+            description = "Valida as credenciais e devolve token, vencimento e os dados públicos do usuário.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login realizado e token retornado"),
+            @ApiResponse(responseCode = "400", description = "Corpo inválido"),
             @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
     })
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
@@ -40,23 +45,34 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.NO_CONTENT) //hm
-            //oque é request header?????? r - le um cabecalho http da req, o xboottrapkey é o que o desktopmanda no  header. com required false, a fatoda do header vira null e cai no 4-3 enves do 40 altiomatico
+    @Operation(summary = "Logout",
+            description = "Revoga no banco o token usado na requisição. Rota protegida: exige o próprio token.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Token revogado"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido")
+    })
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@RequestHeader("Authorization") String cabecalho) {
-        //oq é substriung? r - vearer tem 7 chars, contando o espaço, o subtring descarta o prefixo e deixa so o token
-        authService.logout(cabecalho.substring("Bearer ".length())); // problema, se nao deixar espaço noo bearer, o findybytoken nao acha a linha por que bearewr sao 7 charachteres do jwtfdilter
-                                                                    //header malformado sem bnearwer cai como anônimo e o Security devolve 401 antes de chegar no controler.
-
+        // "Bearer " tem 7 caracteres, contando o espaco: sem o espaco sobraria
+        // um espaco antes do token e o findTokenByToken nao acharia a linha.
+        authService.logout(cabecalho.substring("Bearer ".length()));
     }
-    // adiioibnar boothservice pra ser redundante
 
     @PostMapping("/bootstrap")
+    @Operation(summary = "Primeira configuração (app JavaFX)",
+            description = "Cria a biblioteca e o primeiro ADMINISTRADOR. Público, mas exige o cabeçalho X-Bootstrap-Key com a chave do .env. Chave vazia no servidor = endpoint desligado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Biblioteca e administrador criados"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Chave de bootstrap inválida ou não configurada"),
+            @ApiResponse(responseCode = "409", description = "Email, CPF ou CNPJ já cadastrado")
+    })
     @ResponseStatus(HttpStatus.CREATED)
     public BootstrapResponse bootstrap(
             @RequestHeader(value = "X-Bootstrap-Key", required = false) String chave,
             @Valid @RequestBody BootstrapRequest request) {
+        // required = false de proposito: sem o cabecalho a resposta e 403 (chave invalida),
+        // nao 400 — quem nao conhece a chave nao descobre nada sobre o sistema.
         return bootstrapService.provisionar(chave, request);
     }
-
-
 }

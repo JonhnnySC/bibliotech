@@ -1,0 +1,169 @@
+]1341;command_started;command=666f72206620696e2061646d696e2d6465736b746f702f706f6d2e786d6c20646f636b65722d636f6d706f73652e796d6c202e67697469676e6f726520524541444d452e6d64202e656e762e6578616d706c65206578656d706c652e656e76
+===== admin-desktop/pom.xml =====
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>br.com.senac</groupId>
+    <artifactId>back</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>back</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.12.1</junit.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>21.0.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>21.0.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <!-- module-info.java exige Java 9+; o JavaFX 21 exige Java 17+ -->
+                    <release>21</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <executions>
+                    <execution>
+                        <!-- Rodar com: mvn clean javafx:run -->
+                        <id>default-cli</id>
+                        <configuration>
+                            <mainClass>br.com.senac.back/br.com.senac.back.AdminApplication</mainClass>
+                            <launcher>app</launcher>
+                            <jlinkZipName>app</jlinkZipName>
+                            <jlinkImageName>app</jlinkImageName>
+                            <noManPages>true</noManPages>
+                            <stripDebug>true</stripDebug>
+                            <noHeaderFiles>true</noHeaderFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+===== docker-compose.yml =====
+services:
+  postgres:
+    image: postgres:18
+    container_name: bibliotech-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-bibliotech}
+    ports:
+      - "5432:5432"
+    volumes:
+      - bibliotech_pgdata:/var/lib/postgresql
+
+volumes:
+  bibliotech_pgdata:
+
+  
+===== .gitignore =====
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+.env
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+===== README.md =====
+#magonegro@JonhnnyPC:~/dev/projects/java/bibliotech$ git mv back admin-desktop
+fatal: bad source, source=back, destination=admin-desktop/back BiblioTech
+
+## Como subir do zero?
+1. `cp .env.example .env` preencha (JWT_SECRET com 32+ caracteres; BOOTSTRAP_KEY: `openssl rand -hex 32`)
+2. `docker compose up -d`
+3. `./mvnw spring-boot:run` (JDK 25)
+4. `cd front && npm install && npm run dev`
+5. `cd admin-desktop && ./mvnw clean javafx:run` (JDK 21+) — crie a biblioteca e o administrador
+6. Logue no front (http://localhost:3000) com o usuário criado
+
+Swagger: http://localhost:8080/swagger-ui.html
+Banco do zero: `docker compose down -v && docker compose up -d` (apaga os dados)
+===== .env.example =====
+# .env.example
+DB_USER=
+DB_PASSWORD=
+JWT_SECRET=
+JWT_EXPIRATION_MINUTES=60
+ADMIN_PROMOTION_PASSWORD=
+BOOTSTRAP_KEY=
+===== exemple.env =====
+NAO EXISTE
+
+===== admin-desktop: build =====
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/home/magonegro/.m2/wrapper/dists/apache-maven-3.8.5-bin/5i5jha092a3i37g0paqnfr15e0/apache-maven-3.8.5/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/home/magonegro/.m2/wrapper/dists/apache-maven-3.8.5-bin/5i5jha092a3i37g0paqnfr15e0/apache-maven-3.8.5/lib/guava-25.1-android.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release

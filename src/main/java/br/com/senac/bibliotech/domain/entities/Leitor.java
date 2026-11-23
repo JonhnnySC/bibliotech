@@ -1,48 +1,37 @@
 package br.com.senac.bibliotech.domain.entities;
 
-import br.com.senac.bibliotech.domain.enums.EnumPerfil;
-import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * Heranca JOINED: usuario guarda os dados comuns, leitor so o que e do leitor.
+ * perfil e status NAO sao redeclarados aqui — ja existem em Usuario.
+ * Redecalhar criava coluna duplicada nas duas tabelas: o builder preenchia a do
+ * filho e o setPerfil() a do pai, e a coluna de leitor ficava sempre LEITOR.
+ *
+ * @SuperBuilder nos dois lados: o builder do filho enxerga os campos herdados.
+ */
 @Entity
-// @Table(name = "Leitor") = removido
 @Getter
 @Setter
-@SuperBuilder//aparentemente isso é bom pra quando tem herança
-
-
-/* ---explicacao o pq---
-o @Builder normal do Lombok não lida bem com superclasses.
-Se "Leitor extends Usuario" e você usa @Builder comum em ambos,
-o builder gerado pra Leitor só enxerga os campos da própria classe
-(id, nome, etc.) — ele não sabe construir os campos herdados de Usuario
-(tipo email).
- */
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Leitor extends Usuario {
 
-    private String  nacionalidade;
-    // e o historico de livros pegos, e tals, onde fica?
-    //r- por que leitor é 1-n com emprestimos
-    // historico de emprestimos entra aaqui como @onetomany mapeado pelio leitor
+    private String nacionalidade;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    // Lado inverso de Emprestimo.leitor. Nao cria coluna; quem manda e o @ManyToOne.
+    @OneToMany(mappedBy = "leitor")
     @Builder.Default
-    private EnumPerfil perfil = EnumPerfil.LEITOR;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @Builder.Default
-    private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
-
-    @OneToMany(mappedBy = "leitor") @Builder.Default
     private List<Emprestimo> emprestimos = new ArrayList<>();
-
 }

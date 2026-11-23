@@ -15,6 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/*
+ * O exemplar nao tem biblioteca_id proprio: herda o dono pelo livro.
+ * Por isso as consultas navegam Livro_Biblioteca_Id.
+ */
 @Service
 @RequiredArgsConstructor
 public class ExemplarService {
@@ -41,10 +45,12 @@ public class ExemplarService {
 
     @Transactional(readOnly = true)
     public List<ExemplarResponse> listarPorLivro(Long livroId) {
+        // Livro de outra biblioteca = 404, sem confirmar que ele existe.
         if (!livroRepository.existsByIdAndBibliotecaId(livroId, bibliotecaLogado.id())) {
             throw new RecursoNaoEncontradoException("Livro", livroId);
         }
-        return exemplarRepository.findByLivroId(livroId).stream()
+        return exemplarRepository.findByLivroIdAndLivro_Biblioteca_Id(livroId, bibliotecaLogado.id())
+                .stream()
                 .map(ExemplarResponse::from)
                 .toList();
     }
@@ -55,8 +61,11 @@ public class ExemplarService {
                 .findByIdAndLivro_Biblioteca_Id(exemplarId, bibliotecaLogado.id())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar", exemplarId));
 
-        if (exemplar.getStatus() == EnumStatusExemplar.EMPRESTADO && novoStatus != EnumStatusExemplar.DISPONIVEL) {
-            throw new ConflitoException("Não é possível alterar o status de um exemplar atualmente emprestado. Faça a devolução primeiro.");
+        // Regra de circulacao: quem esta emprestado so volta por devolucao.
+        if (exemplar.getStatus() == EnumStatusExemplar.EMPRESTADO
+                && novoStatus != EnumStatusExemplar.DISPONIVEL) {
+            throw new ConflitoException(
+                    "Não é possível alterar o status de um exemplar atualmente emprestado. Faça a devolução primeiro.");
         }
 
         exemplar.setStatus(novoStatus);

@@ -1,8 +1,10 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { criarUsuario } from "@/app/services/usuarioService";
+import { cpfValido } from "@/app/lib/validacoes";
 
 const campo = "mb-3 w-full rounded border border-ouro bg-noite/80 px-3 py-2 outline-none focus:border-verde-neon focus:shadow-[0_0_10px_#3dff8f]";
 
@@ -13,19 +15,22 @@ export default function NovoUsuarioPage() {
   const [erro, setErro] = useState("");
 
   const mudar = (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
+      (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+
+    // Só dígitos: o DTO do back valida \d{11}.
+    const cpf = form.cpf.replace(/\D/g, "");
+    if (!cpfValido(cpf)) {
+      setErro("CPF inválido (dígito verificador). Para testar: 52998224725.");
+      return;
+    }
+
     setSalvando(true);
     try {
-      await criarUsuario({
-          nome: form.nome,
-          email: form.email,
-          cpf: form.cpf,
-          senha: form.senha,
-        });
+      await criarUsuario({ nome: form.nome, email: form.email, cpf, senha: form.senha });
       router.push("/usuarios");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao cadastrar");
@@ -34,42 +39,45 @@ export default function NovoUsuarioPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <nav className="mb-4 text-sm text-ouro/70">
-        <Link href="/usuarios" className="hover:text-verde-neon">← Voltar aos usuários</Link>
-      </nav>
-      <h1 className="font-gotica mb-6 text-4xl neon-ouro">Novo usuário</h1>
+      <div className="mx-auto max-w-2xl">
+        <nav className="mb-4 text-sm text-ouro/70">
+          <Link href="/usuarios" className="hover:text-verde-neon">← Voltar aos usuários</Link>
+        </nav>
 
-      <form onSubmit={salvar} className="borda-neon rounded-lg bg-marrom/70 p-6">
-        <label className="mb-1 block text-ouro-neon">Nome *</label>
-        <input required value={form.nome} onChange={mudar("nome")} className={campo} />
+        <h1 className="font-gotica mb-6 text-4xl neon-ouro">Novo usuário</h1>
 
-        <label className="mb-1 block text-ouro-neon">E-mail *</label>
-        <input required type="email" value={form.email} onChange={mudar("email")} className={campo} />
+        <form onSubmit={salvar} className="borda-neon rounded-lg bg-marrom/70 p-6">
+          <label className="mb-1 block text-ouro-neon">Nome *</label>
+          <input required value={form.nome} onChange={mudar("nome")} className={campo} />
 
-        <label className="mb-1 block text-ouro-neon">CPF *</label>
-        <input required value={form.cpf} onChange={mudar("cpf")} className={campo} placeholder="000.000.000-00" />
+          <label className="mb-1 block text-ouro-neon">E-mail *</label>
+          <input required type="email" value={form.email} onChange={mudar("email")} className={campo} />
 
-        <label className="mb-1 block text-ouro-neon">Senha *</label>
-        <input required type="password" value={form.senha} onChange={mudar("senha")} className={campo} autoComplete="new-password" />
+          <label className="mb-1 block text-ouro-neon">CPF *</label>
+          <input required value={form.cpf} onChange={mudar("cpf")} inputMode="numeric"
+                 className={campo} placeholder="52998224725 (com ou sem máscara)" />
 
-        <p className="mb-4 text-xs text-ouro/60">
-          O usuário é criado como LEITOR e ATIVO. Para promover, use o seletor de perfil na lista.
-        </p>
+          <label className="mb-1 block text-ouro-neon">Senha *</label>
+          <input required type="password" minLength={8} maxLength={72}
+                 value={form.senha} onChange={mudar("senha")} className={campo} autoComplete="new-password" />
 
-        {erro && <p className="mb-3 text-red-400">{erro}</p>}
+          <p className="mb-4 text-xs text-ouro/60">
+            O usuário nasce LEITOR e ATIVO, na sua biblioteca. Para promover, use o seletor de perfil na lista.
+          </p>
 
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => router.back()}
-            className="rounded border border-ouro px-4 py-2 text-ouro-neon hover:bg-ouro hover:text-noite">
-            Cancelar
-          </button>
-          <button disabled={salvando}
-            className="btn-neon font-gotica rounded-full px-6 py-2 text-xl disabled:opacity-50">
-            {salvando ? "Salvando..." : "Cadastrar usuário"}
-          </button>
-        </div>
-      </form>
-    </div>
+          {erro && <p className="mb-3 text-red-400">{erro}</p>}
+
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => router.back()}
+                    className="rounded border border-ouro px-4 py-2 text-ouro-neon hover:bg-ouro hover:text-noite">
+              Cancelar
+            </button>
+            <button disabled={salvando}
+                    className="btn-neon font-gotica rounded-full px-6 py-2 text-xl disabled:opacity-50">
+              {salvando ? "Salvando..." : "Cadastrar usuário"}
+            </button>
+          </div>
+        </form>
+      </div>
   );
 }

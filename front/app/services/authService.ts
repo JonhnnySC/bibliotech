@@ -6,15 +6,12 @@ export async function login(email: string, senha: string): Promise<LoginResponse
   return resposta.data;
 }
 
-export async function registrar(corpo: { nome: string; email: string; cpf: string; senha: string }): Promise<void> {
-  await api.post("/auth/registro", corpo);
-}
-
+// Revoga o token no servidor. Erro e ignorado de proposito: se o token ja
+// venceu, o objetivo (nao valer mais) ja foi alcancado.
 export async function logoutNoServidor(): Promise<void> {
   try {
     await api.post("/auth/logout");
   } catch {
     /* token ja invalido: tudo bem */
-    
   }
 }

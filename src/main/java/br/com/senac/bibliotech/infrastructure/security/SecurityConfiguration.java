@@ -25,13 +25,13 @@ public class SecurityConfiguration {
         this.tokenPort = tokenPort;
     }
 
-    // Cadeia de filtros de segurança (primeiro match vence).
+    // Cadeia de filtros: o primeiro match vence. anyRequest() sempre por ultimo.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
 
-                // API stateless com JWT, não precisa de CSRF
+                // API stateless com JWT: nao ha sessao para o CSRF proteger
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
@@ -43,7 +43,7 @@ public class SecurityConfiguration {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Público
+                        // Publico
                         .requestMatchers(
                                 "/swagger-ui/**", "/v3/api-docs/**",
                                 "/swagger-resources/**", "/webjars/**",
@@ -53,16 +53,20 @@ public class SecurityConfiguration {
                         // Preflight do CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Apenas ADMIN
+                        // Apenas ADMINISTRADOR
                         .requestMatchers(HttpMethod.PATCH,
                                 "/usuarios/*/perfil",
                                 "/usuarios/*/status")
                         .hasRole("ADMINISTRADOR")
 
-                        .requestMatchers(HttpMethod.DELETE,
-                                "/usuarios/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/usuarios/**")
+                        .hasRole("ADMINISTRADOR")
 
-                        // ADMIN ou BIBLIOTECARIO
+                        // Dados da biblioteca: só o administrador altera nome e endereco
+                        .requestMatchers(HttpMethod.PUT, "/bibliotecas/**")
+                        .hasRole("ADMINISTRADOR")
+
+                        // ADMINISTRADOR ou BIBLIOTECARIO
                         .requestMatchers(HttpMethod.POST,
                                 "/livros", "/autores", "/exemplares", "/usuarios")
                         .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
@@ -75,15 +79,15 @@ public class SecurityConfiguration {
                                 "/livros/**", "/autores/**", "/exemplares/**")
                         .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
-                        .requestMatchers(HttpMethod.PATCH,
-                                "/exemplares/*/status")
+                        .requestMatchers(HttpMethod.PATCH, "/exemplares/*/status")
                         .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
-                        // Empréstimos: qualquer usuário autenticado
+                        // Emprestimos: qualquer autenticado (o escopo da biblioteca e aplicado no service)
                         .requestMatchers(HttpMethod.POST, "/emprestimos").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/emprestimos/*/devolver").authenticated()
 
-                        // SEMPRE por último
+                        // TESTE 2: troque a linha abaixo por .anyRequest().permitAll(),
+                        // reinicie e chame GET /generos sem token. Depois desfaça.
                         .anyRequest().authenticated()
                 )
 
