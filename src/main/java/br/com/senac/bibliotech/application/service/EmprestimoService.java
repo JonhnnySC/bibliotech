@@ -7,6 +7,7 @@ import br.com.senac.bibliotech.domain.entities.Leitor;
 import br.com.senac.bibliotech.domain.entities.Usuario;
 import br.com.senac.bibliotech.domain.enums.EnumStatusEmprestimo;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
+import br.com.senac.bibliotech.domain.repository.BibliotecaRepository;
 import br.com.senac.bibliotech.domain.repository.EmprestimoRepository;
 import br.com.senac.bibliotech.domain.repository.ExemplarRepository;
 import br.com.senac.bibliotech.domain.repository.LeitorRepository;
@@ -18,9 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /*
- * Service = ORQUESTRAÇÃO (Aula 15.10): busca, chama a entidade e salva.
- * As regras (exemplar disponível, prazo, devolução) moram em Emprestimo e Exemplar.
- */
+ Service = ORQUESTRAÇÃO: busca NO ESCOPO, chama a entidade e salva.
+ As regras (exemplar disponível, prazo, devolução) moram em Emprestimo e Exemplar.
+*/
 @Service
 @RequiredArgsConstructor
 public class EmprestimoService {
@@ -30,18 +31,24 @@ public class EmprestimoService {
     private final ExemplarRepository exemplarRepository;
     private final UsuarioRepository usuarioRepository;
     private final UsuarioService usuarioService;
+    private final BibliotecaRepository bibliotecaRepository;
+    private final BibliotecaLogado bibliotecaLogado;
 
     @Transactional
     public EmprestimoResponse realizarEmprestimo(Long leitorId, Long exemplarId) {
-        Leitor leitor = leitorRepository.findById(leitorId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor " + leitorId + " não encontrado"));
-        Exemplar exemplar = exemplarRepository.findById(exemplarId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar " + exemplarId + " não encontrado"));
+        Long bibliotecaId = bibliotecaLogado.id();
 
-        // Quem registra é o usuário logado (token), o front não informa (Aula 3)
+        Leitor leitor = leitorRepository.findByIdAndBiblioteca_Id(leitorId, bibliotecaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Leitor", leitorId));
+
+        Exemplar exemplar = exemplarRepository.findByIdAndLivro_Biblioteca_Id(exemplarId, bibliotecaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar", exemplarId));
+
+        // Quem registra é o usuário logado (token); o front não informa.
         Usuario registradoPor = usuarioRepository.getReferenceById(usuarioService.getUsuarioLogado().id());
 
         Emprestimo emprestimo = Emprestimo.registrar(leitor, exemplar, registradoPor);
+        emprestimo.setBiblioteca(bibliotecaRepository.referencia(bibliotecaId)); // dono (NOT NULL)
 
         exemplarRepository.save(exemplar);
         return EmprestimoResponse.from(emprestimoRepository.save(emprestimo));
@@ -49,8 +56,9 @@ public class EmprestimoService {
 
     @Transactional
     public void devolverEmprestimo(Long emprestimoId) {
-        Emprestimo emprestimo = emprestimoRepository.findById(emprestimoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Emprestimo: " + emprestimoId + " não encontrado"));
+        Emprestimo emprestimo = emprestimoRepository
+                .findByIdAndBiblioteca_Id(emprestimoId, bibliotecaLogado.id())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Emprestimo", emprestimoId));
 
         emprestimo.registrarDevolucao();
 
@@ -60,7 +68,9 @@ public class EmprestimoService {
 
     @Transactional(readOnly = true)
     public List<EmprestimoResponse> listarEmprestimos() {
-        return emprestimoRepository.findByStatusEmprestimo(EnumStatusEmprestimo.ATIVO).stream()
+        return emprestimoRepository
+                .findByStatusEmprestimoAndBibliotecaId(EnumStatusEmprestimo.ATIVO, bibliotecaLogado.id())
+                .stream()
                 .map(EmprestimoResponse::from)
                 .toList();
     }

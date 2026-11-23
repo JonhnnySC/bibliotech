@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 //n usar @data por que inclui to strin e equaisl and has code, numa entidade que é relacionada bidericenialmente
 //optei por colocar livro tendo yuma lista exemplar, e coimo so tem UMA referencia a livro, elas são bidirecionais = o toString() gerado pega os dois lados infinitamente, evitar @data
 @Entity
@@ -38,7 +41,39 @@ public class Livro {
     @JoinColumn(name = "biblioteca_id", nullable = false, updatable = false)
     private Biblioteca biblioteca;
 
-    /** Updateble false impede mudar de biblioteca depois de criado, nenhum dto de req ganha nbiblioteccva id pror segurança
+    @OneToMany(mappedBy = "livro") @Builder.Default
+    private List<Exemplar> exemplares = new ArrayList<>();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /* Updateble false impede mudar de biblioteca depois de criado, nenhum dto de req ganha nbiblioteccva id pror segurança
      * lazy nao carrgea a biblioteca inteira toda vez que carregar o livro
      * optional false e nullable false diz que oo dono é obrigatoriao
      */

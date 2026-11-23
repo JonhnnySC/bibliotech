@@ -1,6 +1,6 @@
 package br.com.senac.bibliotech.infrastructure.security;
 
-import br.com.senac.bibliotech.application.service.TokenService;
+import br.com.senac.bibliotech.application.port.TokenPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,10 +19,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-    private final TokenService tokenService;
+    private final TokenPort tokenPort;
 
-    public SecurityConfiguration(TokenService tokenService) {
-        this.tokenService = tokenService;
+    public SecurityConfiguration(TokenPort tokenPort) {
+        this.tokenPort = tokenPort;
     }
 
     // Cadeia de filtros de segurança (primeiro match vence).
@@ -47,13 +47,11 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/swagger-ui/**", "/v3/api-docs/**",
                                 "/swagger-resources/**", "/webjars/**",
-                                "/auth/login" /*"/auth/registro"*/, "/auth/bootstrap", "/error"
+                                "/auth/login", "/auth/bootstrap", "/error"
                         ).permitAll()
 
-                        // Preflight do CORS (o navegador manda OPTIONS antes da request real)
-                        .requestMatchers(HttpMethod.OPTIONS,
-                                "/**")
-                        .permitAll()
+                        // Preflight do CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Apenas ADMIN
                         .requestMatchers(HttpMethod.PATCH,
@@ -70,7 +68,7 @@ public class SecurityConfiguration {
                         .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
                         .requestMatchers(HttpMethod.PUT,
-                                "/livros/**", "/autores/**")
+                                "/livros/**", "/autores/**", "/usuarios/**")
                         .hasAnyRole("ADMINISTRADOR", "BIBLIOTECARIO")
 
                         .requestMatchers(HttpMethod.DELETE,
@@ -89,15 +87,12 @@ public class SecurityConfiguration {
                         .anyRequest().authenticated()
                 )
 
-                // JwtFilter roda ANTES do filtro de autenticação padrão:
-                // lê o token, valida e popula o SecurityContext com o perfil do usuário
-                .addFilterBefore(new JwtFilter(tokenService),
+                .addFilterBefore(new JwtFilter(tokenPort),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Expõe o AuthenticationManager para o AuthService usar no login (email + senha).
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig)
             throws Exception {

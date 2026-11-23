@@ -5,6 +5,9 @@ import br.com.senac.bibliotech.application.dto.AtualizarUsuarioRequest;
 import br.com.senac.bibliotech.application.dto.UsuarioLogado;
 import br.com.senac.bibliotech.application.dto.UsuarioRequest;
 import br.com.senac.bibliotech.application.dto.UsuarioResponse;
+import br.com.senac.bibliotech.application.exception.AcessoNegadoException;
+import br.com.senac.bibliotech.application.port.SenhaPort;
+import br.com.senac.bibliotech.application.port.UsuarioLogadoPort;
 import br.com.senac.bibliotech.domain.entities.Leitor;
 import br.com.senac.bibliotech.domain.entities.Usuario;
 import br.com.senac.bibliotech.domain.enums.EnumPerfil;
@@ -15,13 +18,8 @@ import br.com.senac.bibliotech.domain.repository.BibliotecaRepository;
 import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
 import br.com.senac.bibliotech.domain.valueObject.CPF;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -29,38 +27,33 @@ import java.util.List;
 import java.util.Locale;
 
 /*
-  Regras de negócio de usuário. Tudo que o controller antigo fazia com "if" e
-  "orElse(null)" mora aqui, e o controller fica só com HTTP.
-
- */
+ Regras de negócio de usuário. A camada de aplicação só conhece PORTAS:
+ SenhaPort (BCrypt) e UsuarioLogadoPort (SecurityContext) ficam na infraestrutura.
+*/
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final SenhaPort senhaPort;
+    private final UsuarioLogadoPort usuarioLogadoPort;
     private final BibliotecaRepository bibliotecaRepository;
 
-
-
     // Senha especial exigida para promover alguém a ADMINISTRADOR.
-    // Vem do .env (ADMIN_PROMOTION_PASSWORD) via application.properties.
-    // Vazia = nenhuma promoção a ADMIN é aceita.
     @Value("${app.admin.senha-promocao:}")
     private String senhaPromocao;
 
-
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
-                          BibliotecaRepository bibliotecaRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, SenhaPort senhaPort,
+                          UsuarioLogadoPort usuarioLogadoPort, BibliotecaRepository bibliotecaRepository) {
         this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.senhaPort = senhaPort;
+        this.usuarioLogadoPort = usuarioLogadoPort;
         this.bibliotecaRepository = bibliotecaRepository;
     }
 
-    // agora apenas pra registrar os nao admins
     @Transactional
     public UsuarioResponse cadastrar(UsuarioRequest request) {
         String email = normalizar(request.email());
-        CPF cpf = new CPF(request.cpf()); // lança "CPF Invalido!" se os dígitos não fecham
+        CPF cpf = new CPF(request.cpf());
 
         if (usuarioRepository.existsByEmail(email)) {
             throw new ConflitoException("Já existe um usuário com este email");
@@ -72,50 +65,39 @@ public class UsuarioService {
         Leitor leitor = Leitor.builder()
                 .nome(request.nome())
                 .email(email)
-                .senha(passwordEncoder.encode(request.senha())) // grava o HASH, nunca a senha
+                .senha(senhaPort.codificar(request.senha())) // grava o HASH, nunca a senha
                 .cpf(cpf)
                 .perfil(EnumPerfil.LEITOR)
                 .status(EnumStatusUsuario.ATIVO)
                 .build();
 
-        // Multibiblioteca: quem cadastra define a biblioteca (pelo token). No auto-cadastro
-        // (/auth/registro) não há ninguém logado, então fica sem biblioteca.
+        // Multibiblioteca: quem cadastra define a biblioteca (pelo token), nunca o front.
         UsuarioLogado logado = usuarioLogadoOuNulo();
         if (logado != null && logado.bibliotecaId() != null) {
-            leitor.setBiblioteca(bibliotecaRepository.referencia(logado.bibliotecaId()));        }
+            leitor.setBiblioteca(bibliotecaRepository.referencia(logado.bibliotecaId()));
+        }
 
         return UsuarioResponse.from(usuarioRepository.save(leitor));
     }
 
-    /**
-     * Quem está logado, lido do SecurityContext (Aula 3). O front nunca informa quem
-     * está agindo: o JwtFilter já colocou o UsuarioLogado aqui a partir do token.
-     */
     public UsuarioLogado getUsuarioLogado() {
         UsuarioLogado logado = usuarioLogadoOuNulo();
         if (logado == null) {
-            throw new IllegalStateException("Nenhum usuário logado");
+            throw new AcessoNegadoException("Nenhum usuário logado");
         }
         return logado;
     }
 
     private UsuarioLogado usuarioLogadoOuNulo() {
-        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
-        if (autenticacao != null && autenticacao.getPrincipal() instanceof UsuarioLogado logado) {
-            return logado;
-        }
-        return null;
+        return usuarioLogadoPort.atual().orElse(null);
     }
 
-    // Users excluidos n aparecem na listagem.
-    //Com muitos usuários, troque por Page<UsuarioResponse>.
+    // Usuários excluídos não aparecem na listagem; e só os da minha biblioteca.
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listar() {
-
         Long bibliotecaId = getUsuarioLogado().bibliotecaId();
-
-        return usuarioRepository.findByStatusNotAndBiblioteca_Id(EnumStatusUsuario.EXCLUIDO
-        , bibliotecaId).stream()
+        return usuarioRepository.findByStatusNotAndBiblioteca_Id(EnumStatusUsuario.EXCLUIDO, bibliotecaId)
+                .stream()
                 .map(UsuarioResponse::from)
                 .toList();
     }
@@ -130,18 +112,13 @@ public class UsuarioService {
         Usuario usuario = buscarEntidade(id);
         String email = normalizar(request.email());
 
-        // "existe OUTRO usuário com este email?" (o próprio não conta)
         if (usuarioRepository.existsByEmailAndIdNot(email, id)) {
             throw new ConflitoException("Já existe um usuário com este email");
         }
 
-        // Copiamos campo a campo. O id vem da URL (fonte da verdade) e senha, perfil
-        // e status ficam intactos. Sem save(): o Hibernate detecta a mudança da
-        // entidade gerenciada e faz o UPDATE no commit (dirty checking).
         usuario.setNome(request.nome());
         usuario.setEmail(email);
 
-        // CPF: mesma regra do cadastrar (só dígitos + único). Vazio = mantém o atual.
         if (request.cpf() != null && !request.cpf().isBlank()) {
             CPF cpf = new CPF(request.cpf());
             if (usuarioRepository.existsByCpf_CpfAndIdNot(cpf.getCpf(), id)) {
@@ -162,15 +139,12 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponse atualizarPerfil(Long id, EnumPerfil perfil, String senhaEspecial) {
-        // Promover a ADMINISTRADOR exige a senha especial (configurada fora do código).
         if (perfil == EnumPerfil.ADMINISTRADOR && !senhaEspecialConfere(senhaEspecial)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Senha especial incorreta");
+            throw new AcessoNegadoException("Senha especial incorreta");
         }
 
         Usuario usuario = buscarEntidade(id);
         usuario.setPerfil(perfil);
-        // O perfil é lido do banco a cada requisição (não vai dentro do JWT),
-        // então a mudança vale na próxima chamada do usuário.
         return UsuarioResponse.from(usuario);
     }
 
@@ -178,34 +152,27 @@ public class UsuarioService {
     public void alterarSenha(Long id, AlterarSenhaRequest request) {
         Usuario usuario = buscarEntidade(id);
 
-        if (!passwordEncoder.matches(request.senhaAtual(), usuario.getSenha())) {
-            // 409 é o mais próximo que temos. Depois vale criar uma exceção própria
-            // (400/422), porque um 401 aqui faria o front deslogar o usuário.
+        if (!senhaPort.confere(request.senhaAtual(), usuario.getSenha())) {
             throw new ConflitoException("A senha atual está incorreta");
         }
 
-        usuario.setSenha(passwordEncoder.encode(request.novaSenha()));
+        usuario.setSenha(senhaPort.codificar(request.novaSenha()));
     }
 
-    // SOFT DELETE: o registro continua no banco com status EXCLUIDO.
-    // Por quê? Um usuário pode ter empréstimos no histórico; apagar a linha quebraria
-    // a FK ou destruiria a auditoria.
-    // DOWNSIDE: o email do excluído continua ocupado pelo UNIQUE, então ninguém
-    // consegue se cadastrar de novo com ele (o certo depois é anonimizar os dados).
+    // SOFT DELETE: o registro continua no banco com status EXCLUIDO (histórico de empréstimos).
     @Transactional
     public void excluir(Long id) {
         Usuario usuario = buscarEntidade(id);
         usuario.setStatus(EnumStatusUsuario.EXCLUIDO);
     }
 
-    // Um usuário EXCLUIDO é tratado como "não existe" (404) em todas as operações.
+    // Escopo da biblioteca + EXCLUIDO = "não existe" (404), não 403: não confirma que o registro existe.
     private Usuario buscarEntidade(Long id) {
-        return usuarioRepository.findById(id)
-                .filter(usuario -> usuario.getStatus() != EnumStatusUsuario.EXCLUIDO)
+        return usuarioRepository.findByIdAndBiblioteca_Id(id, getUsuarioLogado().bibliotecaId())
+                .filter(u -> u.getStatus() != EnumStatusUsuario.EXCLUIDO)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", id));
     }
 
-    // Comparação em tempo constante; se a senha não estiver configurada, nega sempre.
     private boolean senhaEspecialConfere(String informada) {
         if (senhaPromocao == null || senhaPromocao.isBlank() || informada == null) {
             return false;
@@ -215,11 +182,7 @@ public class UsuarioService {
                 informada.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Locale.ROOT: o resultado não depende do idioma da máquina (o turco, por
-    // exemplo, converte "I" de um jeito diferente). Use a MESMA regra no login.
     private String normalizar(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
-
-
     }
 }

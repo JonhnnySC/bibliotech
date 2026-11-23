@@ -6,6 +6,7 @@ import br.com.senac.bibliotech.domain.entities.Autor;
 import br.com.senac.bibliotech.domain.entities.Livro;
 import br.com.senac.bibliotech.domain.exception.RecursoNaoEncontradoException;
 import br.com.senac.bibliotech.domain.repository.AutorRepository;
+import br.com.senac.bibliotech.domain.repository.BibliotecaRepository;
 import br.com.senac.bibliotech.domain.repository.LivroRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,8 @@ public class AutorService {
 
     private final AutorRepository autorRepository;
     private final LivroRepository livroRepository;
-    private final BibliotecaLogado bibliotecaLogado;   // novo
+    private final BibliotecaRepository bibliotecaRepository;
+    private final BibliotecaLogado bibliotecaLogado;
 
     @Transactional
     public AutorResponse criar(AutorRequest request) {
@@ -30,39 +32,34 @@ public class AutorService {
                 .nacionalidade(request.nacionalidade())
                 .dataNascimento(request.dataNascimento())
                 .fotoUrl(request.fotoUrl())
+                .biblioteca(bibliotecaRepository.referencia(bibliotecaLogado.id())) // dono do registro
                 .build();
 
         sincronizarLivros(autor, request.livroIds());
-
         return AutorResponse.from(autorRepository.save(autor));
     }
 
-    // transação aberta: "livros" é lazy e é lido dentro do from()
     @Transactional(readOnly = true)
     public List<AutorResponse> listarTodos() {
-        return autorRepository.findAll().stream()
+        return autorRepository.findAllByBiblioteca_Id(bibliotecaLogado.id()).stream()
                 .map(AutorResponse::from)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public AutorResponse buscarPorId(Long id) {
-        Autor autor = autorRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Autor", id));
-        return AutorResponse.from(autor);
+        return AutorResponse.from(buscarNoEscopo(id));
     }
 
     @Transactional
     public AutorResponse atualizar(Long id, AutorRequest request) {
-        Autor autor = autorRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Autor", id));
+        Autor autor = buscarNoEscopo(id);
 
         autor.setNome(request.nome());
         autor.setNacionalidade(request.nacionalidade());
         autor.setDataNascimento(request.dataNascimento());
         autor.setFotoUrl(request.fotoUrl());
 
-        // null = não mexe nos vínculos (evita apagar tudo por engano)
         if (request.livroIds() != null) {
             sincronizarLivros(autor, request.livroIds());
         }
@@ -72,26 +69,31 @@ public class AutorService {
 
     @Transactional
     public void deletar(Long id) {
-        if (!autorRepository.existsById(id)) {
+        if (!autorRepository.existsByIdAndBiblioteca_Id(id, bibliotecaLogado.id())) {
             throw new RecursoNaoEncontradoException("Autor", id);
         }
-        // como Autor é o dono do @ManyToMany, o Hibernate remove as linhas de autor_livro
         autorRepository.deleteById(id);
     }
 
-    // Deixa o autor com exatamente os livros de "ids" (tabela autor_livro).
+    // Fora da minha biblioteca = "não existe" (404).
+    private Autor buscarNoEscopo(Long id) {
+        return autorRepository.findByIdAndBiblioteca_Id(id, bibliotecaLogado.id())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Autor", id));
+    }
+
+    // Deixa o autor com exatamente os livros de "ids" (tabela autor_livro), todos da minha biblioteca.
     private void sincronizarLivros(Autor autor, List<Long> ids) {
         List<Long> desejados = ids == null ? List.of() : ids.stream().distinct().toList();
 
         List<Livro> encontrados = livroRepository.findAllByIdInAndBibliotecaId(desejados, bibliotecaLogado.id());
-        if (encontrados.size() != desejados.size()) {
-            Set<Long> achados = new HashSet<>();
-            encontrados.forEach(l -> achados.add(l.getId()));
-            Long faltando = desejados.stream()
-                    .filter(i -> !achados.contains(i))
-                    .findFirst()
-                    .orElseThrow();
-            throw new RecursoNaoEncontradoException("Livro", faltando);
+
+        Set<Long> achados = new HashSet<>();
+        encontrados.forEach(l -> achados.add(l.getId()));
+
+        for (Long id : desejados) {
+            if (!achados.contains(id)) {
+                throw new RecursoNaoEncontradoException("Livro", id);
+            }
         }
 
         autor.getLivros().clear();

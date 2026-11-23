@@ -5,6 +5,7 @@
 
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { logout } from "../store/authSlice";
 
 export default function ExpiracaoToken() {
   const dispatch = useAppDispatch();

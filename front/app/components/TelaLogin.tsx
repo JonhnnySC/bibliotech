@@ -23,7 +23,7 @@ export default function TelaLogin() {
     setErro("");
     setCarregando(true);
     try {
-      const r = await login(email, senha);
+      const r = await loginNoBack(email, senha);
       dispatch(sessaoIniciada({ token: r.token, expiraEm: r.expiraEm, usuario: r.usuario }));
       // se o login apareceu DENTRO do painel (token vencido), o layout se redesenha sozinho
       if (pathname === "/login") router.push("/home");
@@ -55,7 +55,6 @@ export default function TelaLogin() {
         <button disabled={carregando} className="btn-neon font-gotica w-full rounded-full py-2 text-2xl disabled:opacity-50">
           {carregando ? "Invocando..." : "Entrar"}
         </button>
-        <p className="mt-5 text-center">Ainda não tem conta? <Link href="/cadastro" className="neon-verde hover:underline">Criar conta</Link></p>
         <Link href="/" className="mt-2 block text-center text-ouro hover:text-ouro-neon">← Voltar</Link>
       </form>
     </main>

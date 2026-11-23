@@ -1,8 +1,9 @@
 package br.com.senac.bibliotech.application.port;
 
-import br.com.senac.bibliotech.domain.entities.Usuario;
+import br.com.senac.bibliotech.application.dto.UsuarioLogado;
+
+import java.util.Optional;
 
 public interface UsuarioLogadoPort {
-    Usuario usuario();
-    Long bibliotecaId();
+    Optional<UsuarioLogado> atual();
 }

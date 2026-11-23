@@ -1,7 +1,8 @@
-package br.com.senac.bibliotech.application.service;
+package br.com.senac.bibliotech.infrastructure.security;
 
 import br.com.senac.bibliotech.application.dto.UsuarioLogado;
 import br.com.senac.bibliotech.application.exception.TokenException;
+import br.com.senac.bibliotech.application.port.TokenPort;
 import br.com.senac.bibliotech.domain.entities.Token;
 import br.com.senac.bibliotech.domain.entities.Usuario;
 import br.com.senac.bibliotech.domain.enums.EnumStatusUsuario;
@@ -9,7 +10,7 @@ import br.com.senac.bibliotech.domain.repository.TokenRepository;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
@@ -18,15 +19,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /*
- * Gera o JWT, SALVA o token no banco e, na volta, confere as duas coisas (Aula 3):
- *   1. a assinatura e a validade do JWT;
- *   2. se o token existe no banco, ou seja, se fomos nós que o geramos.
- *
- * O JWT leva só o EMAIL (subject). Perfil e demais dados vêm do banco a cada
- * requisição, porque token vazado com dados dentro é inseguro.
- */
-@Service
-public class TokenService {
+ Adaptador da porta de token: auth0/JWT e a tabela de tokens são detalhes daqui.
+ O JWT leva só o e-mail; perfil e biblioteca vêm do banco a cada requisição.
+*/
+@Component
+public class JwtTokenAdapter implements TokenPort {
 
     private static final String EMISSOR = "bibliotech-api";
 
@@ -34,10 +31,7 @@ public class TokenService {
     private final long expiracaoMinutos;
     private final TokenRepository tokenRepository;
 
-    public record TokenGerado(String valor, Instant expiraEm) {
-    }
-
-    public TokenService(
+    public JwtTokenAdapter(
             @Value("${api.security.token.secret}") String segredo,
             @Value("${api.security.token.expiration-minutes:60}") long expiracaoMinutos,
             TokenRepository tokenRepository) {
@@ -50,30 +44,27 @@ public class TokenService {
         this.tokenRepository = tokenRepository;
     }
 
+    @Override
     @Transactional
-    public TokenGerado gerar(Usuario usuario) {
+    public TokenEmitido emitir(Usuario usuario) {
         Instant agora = Instant.now();
         Instant expiraEm = agora.plus(expiracaoMinutos, ChronoUnit.MINUTES);
 
         String token = JWT.create()
                 .withIssuer(EMISSOR)
                 .withSubject(usuario.getEmail())
-                .withJWTId(UUID.randomUUID().toString()) // dois logins no mesmo segundo geram tokens diferentes
+                .withJWTId(UUID.randomUUID().toString())
                 .withIssuedAt(agora)
                 .withExpiresAt(expiraEm)
                 .sign(algorithm);
 
         tokenRepository.save(new Token(token, usuario));
-
-        return new TokenGerado(token, expiraEm);
+        return new TokenEmitido(token, expiraEm);
     }
 
-    /**
-     * Lança JWTVerificationException (assinatura/validade) ou TokenException
-     * (token que não está no banco, ou de usuário que não está mais ATIVO).
-     */
+    @Override
     @Transactional(readOnly = true)
-    public UsuarioLogado verificarToken(String token) {
+    public UsuarioLogado verificar(String token) {
         JWT.require(algorithm).withIssuer(EMISSOR).build().verify(token);
 
         Token tokenBanco = tokenRepository.findTokenByToken(token)
@@ -83,12 +74,18 @@ public class TokenService {
         if (usuario.getStatus() != EnumStatusUsuario.ATIVO) {
             throw new TokenException("Usuário inativo");
         }
-
         return new UsuarioLogado(usuario);
     }
 
+    @Override
     @Transactional
     public void revogar(String token) {
         tokenRepository.findTokenByToken(token).ifPresent(tokenRepository::delete);
+    }
+
+    @Override
+    @Transactional
+    public void revogarTodos() {
+        tokenRepository.deleteAllInBatch();
     }
 }

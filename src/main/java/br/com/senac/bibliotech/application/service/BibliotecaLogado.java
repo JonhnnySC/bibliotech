@@ -1,21 +1,21 @@
 package br.com.senac.bibliotech.application.service;
 
-
 import br.com.senac.bibliotech.application.dto.UsuarioLogado;
 import br.com.senac.bibliotech.application.exception.AcessoNegadoException;
-import org.springframework.security.core.context.SecurityContextHolder;
+import br.com.senac.bibliotech.application.port.UsuarioLogadoPort;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-//serve apenas para doizer qal é a biblioteca de quekm esta logado, com isso a logica fica aqui
+/* Escopo do tenant: único ponto que responde "de qual biblioteca é quem está logado". */
 @Component
+@RequiredArgsConstructor
 public class BibliotecaLogado {
 
+    private final UsuarioLogadoPort usuarioLogado;
+
     public Long id() {
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.getPrincipal() instanceof UsuarioLogado logado
-            && logado.bibliotecaId() != null) {
-                return logado.bibliotecaId();
-            }
-            throw new AcessoNegadoException("Usuario sem biblioteca no contexto");
+        return usuarioLogado.atual()
+                .map(UsuarioLogado::bibliotecaId)   // vazio se não houver biblioteca
+                .orElseThrow(() -> new AcessoNegadoException("Usuário sem biblioteca no contexto"));
     }
 }

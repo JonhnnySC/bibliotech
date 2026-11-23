@@ -13,7 +13,7 @@ export default function MinhaBiblioteca() {
     const [msg, setMsg] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
 
     useEffect(() => {
-        api.get("/bibliotecas/minha")
+        api.get("/bibliotecas/minha-biblioteca")
             .then(({ data }) => {
                 setNome(data.nome ?? "");
                 setCep(data.cep ?? "");
@@ -30,7 +30,7 @@ export default function MinhaBiblioteca() {
         if (soDigitos.length !== 8) return;   // "123" não dispara chamada nenhuma
         try {
             const { data } = await api.get(`/bibliotecas/cep/${soDigitos}`);
-            setEndereco(data);
+            setEndereco({ logradouro: data.logradouro, bairro: data.bairro, cidade: data.localidade, uf: data.uf });
             setMsg(null);
         } catch (e) {
             setEndereco({});
@@ -41,7 +41,7 @@ export default function MinhaBiblioteca() {
     async function salvar(ev: React.FormEvent) {
         ev.preventDefault();
         try {
-            await api.put("/bibliotecas/minha", {
+            await api.put("/bibliotecas/minha-biblioteca", {
                 nome, cep: cep.replace(/\D/g, ""), numero, complemento,
             });
             setMsg({ tipo: "ok", texto: "Biblioteca atualizada" });

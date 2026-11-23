@@ -26,7 +26,7 @@ class MultilocacaoTest {
     @Test
     void naoEncontraLivroDeOutraBiblioteca() {
         when(bibliotecaLogado.id()).thenReturn(1L);
-        when(livroRepository.findByIdAndBiblioteca_Id(99L, 1L)).thenReturn(Optional.empty());
+        when(livroRepository.findByIdAndBibliotecaId(99L, 1L)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNaoEncontradoException.class, () -> livroService.buscarPorId(99L));
     }

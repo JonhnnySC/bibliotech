@@ -1,12 +1,13 @@
 package br.com.senac.bibliotech.application.port;
 
+import br.com.senac.bibliotech.application.dto.UsuarioLogado;
 import br.com.senac.bibliotech.domain.entities.Usuario;
 
 import java.time.Instant;
 
-// seguranças portas
 public interface TokenPort {
-    TokenEmitido emitir (Usuario usuario);
+    TokenEmitido emitir(Usuario usuario);
+    UsuarioLogado verificar(String token);
     void revogar(String token);
     void revogarTodos();
 

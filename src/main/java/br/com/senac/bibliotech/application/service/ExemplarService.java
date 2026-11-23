@@ -21,7 +21,7 @@ public class ExemplarService {
 
     private final ExemplarRepository exemplarRepository;
     private final LivroRepository livroRepository;
-    private final BibliotecaLogado bibliotecaLogado;   // novo
+    private final BibliotecaLogado bibliotecaLogado;
 
     @Transactional
     public ExemplarResponse criar(ExemplarRequest request) {
@@ -39,6 +39,7 @@ public class ExemplarService {
         return ExemplarResponse.from(exemplarRepository.save(exemplar));
     }
 
+    @Transactional(readOnly = true)
     public List<ExemplarResponse> listarPorLivro(Long livroId) {
         if (!livroRepository.existsByIdAndBibliotecaId(livroId, bibliotecaLogado.id())) {
             throw new RecursoNaoEncontradoException("Livro", livroId);
@@ -50,7 +51,8 @@ public class ExemplarService {
 
     @Transactional
     public ExemplarResponse atualizarStatus(Long exemplarId, EnumStatusExemplar novoStatus) {
-        Exemplar exemplar = exemplarRepository.findById(exemplarId)
+        Exemplar exemplar = exemplarRepository
+                .findByIdAndLivro_Biblioteca_Id(exemplarId, bibliotecaLogado.id())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar", exemplarId));
 
         if (exemplar.getStatus() == EnumStatusExemplar.EMPRESTADO && novoStatus != EnumStatusExemplar.DISPONIVEL) {

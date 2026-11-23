@@ -1,7 +1,7 @@
 package br.com.senac.bibliotech.infrastructure.security;
 
 import br.com.senac.bibliotech.application.exception.TokenException;
-import br.com.senac.bibliotech.application.service.TokenService;
+import br.com.senac.bibliotech.application.port.TokenPort;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,16 +14,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /*
- Lê o "Authorization: Bearer, pede ao TokenService para verificar JWTe banco
- e coloca o UsuarioLogado como principal do SecurityContext. Daí em diante, qualquer
- parte do sistema sabe quem está logado e quais são as roles dele.
- */
+ Lê o "Authorization: Bearer", pede à PORTA de token para verificar (JWT + banco)
+ e coloca o UsuarioLogado como principal do SecurityContext.
+ A infraestrutura de segurança não conhece mais nenhuma classe concreta de serviço.
+*/
 public class JwtFilter extends OncePerRequestFilter {
 
-    private final TokenService tokenService;
+    private final TokenPort tokenPort;
 
-    public JwtFilter(TokenService tokenService) {
-        this.tokenService = tokenService;
+    public JwtFilter(TokenPort tokenPort) {
+        this.tokenPort = tokenPort;
     }
 
     // Rotas públicas não passam pela verificação do token
@@ -36,8 +36,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 || uri.startsWith("/swagger-resources")
                 || uri.startsWith("/webjars")
                 || uri.equals("/auth/login")
-                || uri.equals("/auth/bootstrap") // adicionei ao lado do login
-                // || uri.equals("/auth/registro") nao mais necessrio
+                || uri.equals("/auth/bootstrap")
                 || uri.equals("/error");
     }
 
@@ -45,6 +44,7 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+
         String authHeader = request.getHeader("Authorization");
 
         // Sem token: segue como anônimo. O SecurityConfiguration responde 401 nas rotas protegidas.
@@ -54,7 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         try {
-            var usuarioLogado = tokenService.verificarToken(authHeader.substring(7));
+            var usuarioLogado = tokenPort.verificar(authHeader.substring(7));
 
             var autenticacao = new UsernamePasswordAuthenticationToken(
                     usuarioLogado,

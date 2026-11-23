@@ -3,6 +3,7 @@ package br.com.senac.bibliotech.application.service;
 import br.com.senac.bibliotech.application.dto.BootstrapRequest;
 import br.com.senac.bibliotech.application.dto.BootstrapResponse;
 import br.com.senac.bibliotech.application.exception.AcessoNegadoException;
+import br.com.senac.bibliotech.application.port.SenhaPort;
 import br.com.senac.bibliotech.domain.entities.Biblioteca;
 import br.com.senac.bibliotech.domain.entities.Usuario;
 import br.com.senac.bibliotech.domain.enums.EnumPerfil;
@@ -12,7 +13,6 @@ import br.com.senac.bibliotech.domain.repository.UsuarioRepository;
 import br.com.senac.bibliotech.domain.valueObject.CPF;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,20 +20,22 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Locale;
 
+/*
+ Primeira configuração do sistema (chamada pelo app JavaFX).
+ A aplicação só conhece a PORTA de senha; BCrypt é detalhe da infraestrutura.
+*/
 @Service
 @RequiredArgsConstructor
 public class BootstrapService {
 
     private final BibliotecaRepository bibliotecaRepository;
     private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final SenhaPort senhaPort;
 
-    //por que?
     @Value("${app.bootstrap.key:}")
     private String chaveConfigurada;
 
-
-//metodinho chave confere, que compara a chave informada com a chave configurada, usando MessageDigest.isEqual para evitar ataques de timing
+    // Comparação em tempo constante; chave vazia no .env = bootstrap sempre negado.
     private boolean chaveConfere(String informada) {
         if (chaveConfigurada == null || chaveConfigurada.isBlank() || informada == null) {
             return false;
@@ -44,8 +46,8 @@ public class BootstrapService {
     }
 
     @Transactional
-    public BootstrapResponse provisionar(String ChaveInformada, BootstrapRequest request) {
-        if (!chaveConfere(ChaveInformada)) {
+    public BootstrapResponse provisionar(String chaveInformada, BootstrapRequest request) {
+        if (!chaveConfere(chaveInformada)) {
             throw new AcessoNegadoException("Chave de bootstrap inválida");
         }
         CPF cpf = new CPF(request.adminCpf());
@@ -67,8 +69,8 @@ public class BootstrapService {
                 .nome(request.adminNome().trim())
                 .email(email)
                 .cpf(cpf)
-                .senha(passwordEncoder.encode(request.adminSenha()))
-                .perfil(EnumPerfil.ADMINISTRADOR)   // tarra faltano por que senao o a pessoa  cadastrada nao teria acesso do adm no front
+                .senha(senhaPort.codificar(request.adminSenha()))   // HASH, nunca a senha
+                .perfil(EnumPerfil.ADMINISTRADOR)
                 .biblioteca(biblioteca)
                 .build();
         usuarioRepository.save(admin);

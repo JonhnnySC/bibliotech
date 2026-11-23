@@ -7,38 +7,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-/*
- Cada metodo é uma "derived query": o Spring lê o NOME e gera o SQL.
-  Se o nome citar uma propriedade que não existe em Usuario, a app nem sobe
- (falha rápida, o que é bom).
-
-  REMOVIDO: existsUsuarioByEmailAndSenha. Comparar senha dentro do SQL não funciona
-  com BCrypt (cada hash tem um salt diferente) e incentivava guardar senha em texto puro.
- */
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    // Login: devolve o usuário. A senha é conferida no AuthService, com
-    // passwordEncoder.matches(...). Optional porque existe zero ou um usuário por email.
+    // Login e unicidade são GLOBAIS de propósito: e-mail/CPF identificam a pessoa,
+    // e no login ainda não existe biblioteca no contexto.
     Optional<Usuario> findByEmail(String email);
-
-    // Cadastro: dá um erro amigável (409) antes de bater no UNIQUE do banco.
     boolean existsByEmail(String email);
-
-    // Atualização: "existe OUTRO usuário com este email?" (o próprio não conta).
-    // Sem o "IdNot", o usuário não conseguiria salvar o cadastro sem trocar o email.
-    // Gera: where email = ? and id <> ?
     boolean existsByEmailAndIdNot(String email, Long id);
-
-    // Todos exceto o status informado (ex.: listar tudo menos os EXCLUIDO).
-    // List, e não Optional<List>: coleção vazia já significa "nada encontrado".
-    List<Usuario> findByStatusNot(EnumStatusUsuario status);
-
-    // O cpf é um value object @Embedded (CPF), então o caminho é cpf.cpf  ->  Cpf_Cpf
+    boolean existsByCpf_Cpf(String cpf);
     boolean existsByCpf_CpfAndIdNot(String cpf, Long id);
 
-    boolean existsByCpf_Cpf(String cpf);
-
-    // Multibiblioteca: lista só os usuários da biblioteca do usuário logado
+    // Operações de negócio: sempre dentro da biblioteca do token.
     List<Usuario> findByStatusNotAndBiblioteca_Id(EnumStatusUsuario status, Long bibliotecaId);
+    Optional<Usuario> findByIdAndBiblioteca_Id(Long id, Long bibliotecaId);
+
 
 }

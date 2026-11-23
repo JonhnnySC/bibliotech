@@ -43,7 +43,7 @@ export default function Home() {
   const [ativos, setAtivos] = useState<Emprestimo[]>([]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
-  const email = useAppSelector((estado) => estado.auth.email) ?? "";
+  const email = useAppSelector((estado) => estado.auth.usuario?.email) ?? "";
 
   // fetch inicial no padrão sem setState síncrono no effect (callbacks .then)
   useEffect(() => {

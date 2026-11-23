@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 // @Table(name = "Leitor") = removido
 @Getter
@@ -38,5 +41,8 @@ public class Leitor extends Usuario {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
+
+    @OneToMany(mappedBy = "leitor") @Builder.Default
+    private List<Emprestimo> emprestimos = new ArrayList<>();
 
 }

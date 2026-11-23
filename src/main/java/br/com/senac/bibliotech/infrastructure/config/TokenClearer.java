@@ -1,22 +1,24 @@
 package br.com.senac.bibliotech.infrastructure.config;
 
-import br.com.senac.bibliotech.domain.repository.TokenRepository;
+import br.com.senac.bibliotech.application.port.TokenPort;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
-// por que é só class, por que component e oque é aplicationrtunner? e por que?
 
+/*
+ ApplicationRunner roda logo após o contexto subir. Aqui ele zera a tabela de tokens: odo token emitido antes deste boot deixa de valer
+*/
 @Component
 @RequiredArgsConstructor
 class TokenClearer implements ApplicationRunner {
 
-    private final TokenRepository tokenRepository;
+    private final TokenPort tokenPort;
 
     @Override
     @Transactional
-    public void run (ApplicationArguments args) {
-        tokenRepository.deleteAllInBatch(); // oque é batch?
+    public void run(ApplicationArguments args) {
+        tokenPort.revogarTodos();
     }
 }

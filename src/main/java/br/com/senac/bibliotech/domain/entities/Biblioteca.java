@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /*
  * MULTIBIBLIOTECA (equivalente da "Empresa" do projeto do professor).
  * Cada usuário pode pertencer a uma biblioteca; quem define essa ligação é só o
@@ -30,6 +33,9 @@ public class Biblioteca {
 
     @Column(nullable = false, unique = true, length = 14)
     private String cnpj;
+
+    @OneToMany(mappedBy = "biblioteca")
+    private List<Livro> livros = new ArrayList<>();
 
     //por quer collum? o hibernate ve o tamanho da coluna, com ddl update, esses campos sao ccolocados na subida serm apagar
 
