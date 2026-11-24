@@ -75,4 +75,7 @@ public class AuthController {
         // nao 400 — quem nao conhece a chave nao descobre nada sobre o sistema.
         return bootstrapService.provisionar(chave, request);
     }
+
+
+
 }

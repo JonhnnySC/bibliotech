@@ -2,6 +2,7 @@ package br.com.senac.bibliotech.infrastructure.persistence;
 
 import br.com.senac.bibliotech.domain.entities.Biblioteca;
 import br.com.senac.bibliotech.domain.repository.BibliotecaRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -32,4 +33,7 @@ class BibliotecaRepositoryAdapter implements BibliotecaRepository {
     public Biblioteca referencia(Long id) {
         return jpa.getReferenceById(id);
     }
+
+    @Override
+    public List<Biblioteca> findAll() { return jpa.findAll(); }
 }

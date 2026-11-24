@@ -166,6 +166,10 @@ public class UsuarioService {
         usuario.setStatus(EnumStatusUsuario.EXCLUIDO);
     }
 
+
+
+
+
     // Escopo da biblioteca + EXCLUIDO = "não existe" (404), não 403: não confirma que o registro existe.
     private Usuario buscarEntidade(Long id) {
         return usuarioRepository.findByIdAndBiblioteca_Id(id, getUsuarioLogado().bibliotecaId())
